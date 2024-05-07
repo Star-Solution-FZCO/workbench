@@ -1,0 +1,23 @@
+stages:
+  - lint
+
+default:
+  image: docker:26.1
+  services:
+    - docker:26.1-dind
+
+lint-backend:
+  stage: lint
+  script:
+    - docker build -t $CI_PROJECT_NAME-backend:test-$CI_JOB_ID --target test -f Dockerfile .
+    - docker run --rm $CI_PROJECT_NAME-backend:test-$CI_JOB_ID
+  except:
+    - tags
+
+lint-frontend:
+  stage: lint
+  script:
+    - docker build -t $CI_PROJECT_NAME-frontend:test-$CI_JOB_ID -f Dockerfile_frontend .
+    - docker run --rm $CI_PROJECT_NAME-frontend:test-$CI_JOB_ID /bin/sh
+  except:
+    - tags
