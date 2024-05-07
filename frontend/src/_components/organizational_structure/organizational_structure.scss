@@ -1,0 +1,14 @@
+.node > text {
+    font-size: 14;
+    fill: #000;
+    stroke: #000;
+    stroke-width: 0.5;
+    text-decoration: none;
+    text-anchor: middle;
+
+    &:hover {
+        fill: #0052cc;
+        stroke: #0052cc;
+        text-decoration: underline;
+    }
+}

@@ -1,0 +1,46 @@
+{% macro format_zero(val) %}
+    {%- if val == 0 or val | string == '0:00:00' %}-{% else %}{{ val }}{% endif -%}
+{%- endmacro %}
+{% for item in data %}
+    <h3>{{ item['employee'].english_name }} ({{ item['employee'].email }}{% if item['employee'].pararam %}, @{{ item['employee'].pararam }}{% endif %})</h3>
+    <table border=1>
+        <thead>
+            <tr>
+                <td>Day</td>
+                <td>Day type</td>
+                <td>Youtrack</td>
+                <td>Gerrit merged</td>
+                <td>Gerrit new changes</td>
+                <td>Gerrit reviewed</td>
+                <td>Gerrit comments</td>
+                <td>CVS</td>
+                <td>Google meet calls</td>
+                <td>Discord calls</td>
+                <td>Pararam posts</td>
+                <td>Google drive</td>
+                <td>Zendesk</td>
+                <td>Details</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for day in item['days'] %}
+                <tr>
+                    <td>{{ day }}</td>
+                    <td>{{ item['days'][day]['status'] }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].youtrack) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].gerrit_merged) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].gerrit_new) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].gerrit_reviewed) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].gerrit_comments) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].cvs) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].google_meet) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].discord_call) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].pararam) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].google_drive) }}</td>
+                    <td>{{ format_zero(item['days'][day]['summary'].zendesk) }}</td>
+                    <td><a href="{{ public_base_url }}/reports/activity-details?id={{ item['employee'].id }}&start={{ day }}&end={{ day }}">details</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}

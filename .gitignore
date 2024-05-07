@@ -1,0 +1,10 @@
+/settings.toml
+STORAGE
+.idea/
+__pycache__
+.mypy_cache/
+
+data
+# MacOS
+.DS_Store
+.vscode

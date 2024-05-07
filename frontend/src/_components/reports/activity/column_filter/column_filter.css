@@ -1,0 +1,16 @@
+.activity-column-filter-button_hightlighted {
+    border: 2px solid rgb(32, 144, 234);
+    animation: border-pulsate 3s infinite;
+}
+
+@keyframes border-pulsate {
+    0% {
+        border: 2px solid rgb(32, 144, 234, 0.5);
+    }
+    50% {
+        border: 2px solid rgb(32, 144, 234, 1);
+    }
+    100% {
+        border: 2px solid rgb(32, 144, 234, 0.5);
+    }
+}

@@ -1,0 +1,26 @@
+[default]
+ORIGINS = ['http://localhost:3000', 'http://localhost:9090']
+DEBUG = true
+DEV_MODE = true
+JWT_SECRET = 'TESTSECRET'
+DB_URI = 'postgresql+asyncpg://test:test@postgres:5432/wb'
+DEFAULT_API_USER='test'
+API_TOKEN='TESTKEY'
+CELERY_BROKER_URL='redis://redis:6379'
+PUBLIC_BASE_URL='http://localhost:3001'
+REDIS_URL='redis://redis:6379'
+LDAP_URI=''
+LDAP_BASE_DN=''
+S3_ACCESS_KEY = 'TESTMINIOACCESS'
+S3_SECRET_KEY = 'TESTMINIOSECRET'
+S3_ENDPOINT = 'http://minio:9000'
+S3_BUCKET = 'me-bucket'
+S3_REGION = 'us-east-1'
+S3_VERIFY = false
+TM_DB_URI = 'mysql+aiomysql://test:test@oldwbdb:3306/workbench'
+CONFLUENCE_URL='https://wiki.example.com/rest/api'
+CONFLUENCE_API_TOKEN='confluence_api_token'
+CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID='1111111111'
+YOUTRACK_URL='https://youtrack.example.com'
+YOUTRACK_API_TOKEN='youtrack_api_token'
+EMAIL_DOMAIN_WHITELIST = ['example.com', 'localhost']

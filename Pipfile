@@ -1,0 +1,55 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+Pillow = "*"
+SQLAlchemy = {extras = ["asyncio"], version = "*"}
+aioboto3 = "*"
+aiofiles = "*"
+aiogoogle = "*"
+aiohttp = "*"
+aiomysql = "*"
+alembic = "*"
+asyncpg = "*"
+bcrypt = "*"
+bonsai = "*"
+caldav = "*"
+celery = "*"
+cryptography = "*"
+dynaconf = "*"
+fastapi = "*"
+lxml = "*"
+xmldiff = "*"
+starsol-fastapi-jwt-auth = {extras = ["asymmetric"], version = "*"}
+starsol-otp = "==1.0.0"
+jinja2 = "*"
+openpyxl = "*"
+pararamio = "*"
+pillow = "*"
+prometheus-fastapi-instrumentator = "*"
+pydantic = {extras = ["email"], version = ">=2.0"}
+pyparsing = "==3.0.9"
+python-datauri = "*"
+python-jose = "*"
+python-multipart = "*"
+redis = "*"
+sentry-sdk = {extras = ["fastapi"], version = "*"}
+starlette = "*"
+starlette-context = "*"
+uvicorn = "*"
+
+[dev-packages]
+types-aiofiles = "*"
+bandit = "*"
+black = "*"
+isort = "*"
+mypy = "*"
+pipfile-sort = "*"
+pylint = "*"
+types-redis = "*"
+ruff = "*"
+
+[requires]
+python_version = "3.11"

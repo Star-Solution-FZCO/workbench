@@ -1,0 +1,6 @@
+data
+etc/settings.toml
+etc/oauth/*.crt
+etc/oauth/*.key
+etc/google
+*.pem

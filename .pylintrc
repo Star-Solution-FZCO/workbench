@@ -1,0 +1,20 @@
+[MASTER]
+extension-pkg-whitelist = pydantic
+extension-pkg-allow-list = lxml
+
+[FORMAT]
+max-line-length = 160
+good-names = i, j, k, ex, Run, _, q, v, p, f, r, w, h, u, d, e, s, dt, c
+
+[MESSAGES CONTROL]
+disable=
+  missing-module-docstring,
+  missing-class-docstring,
+  missing-function-docstring,
+  duplicate-code,
+  too-many-ancestors,
+  too-many-instance-attributes,
+  too-few-public-methods,
+  too-many-arguments,
+  fixme,
+  logging-fstring-interpolation,

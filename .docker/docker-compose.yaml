@@ -1,0 +1,84 @@
+name: wb
+services:
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    ports:
+    - "127.0.0.1:9090:9090"
+    volumes:
+    - "./etc:/app/etc"
+    - "./data/me/var:/app/var"
+    - "./data/tm:/data/tm:ro"
+    depends_on:
+      postgres:
+        condition: service_started
+  celery-worker:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: celery-worker
+    volumes:
+      - "./etc:/app/etc"
+      - "./data/me/var:/app/var"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+  celery-beat:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    command: celery-beat
+    volumes:
+      - "./etc:/app/etc"
+      - "./data/me/var:/app/var"
+    depends_on:
+      postgres:
+        condition: service_started
+      redis:
+        condition: service_started
+  postgres:
+    image: postgres:15.2
+    volumes:
+      - "./data/postgres:/var/lib/postgresql/data"
+    environment:
+      POSTGRES_USER: 'test'
+      POSTGRES_PASSWORD: 'test'
+      POSTGRES_DB: 'wb'
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=test@test.com
+      - PGADMIN_DEFAULT_PASSWORD=test
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+    ports:
+      - 8000:80
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - "./data/redis:/data"
+  minio:
+    image: minio/minio:RELEASE.2023-03-13T19-46-17Z
+    environment:
+      - MINIO_ACCESS_KEY=TESTMINIOACCESS
+      - MINIO_SECRET_KEY=TESTMINIOSECRET
+    ports:
+      - "127.0.0.1:3002:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - "./data/minio:/data"
+    command: server /data --address ":9000" --console-address ":9001"
+  oldwbdb:
+    image: mariadb:5.5.44
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: workbench
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      TZ: UTC
+    volumes:
+      - ./data/oldwbdb:/var/lib/mysql
+      - ./data/dumps:/dumps

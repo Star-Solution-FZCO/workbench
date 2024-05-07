@@ -1,0 +1,17 @@
+.vacation-balance-hint_highlighted {
+    border: 2px solid rgba(0, 122, 255, 1);
+    border-radius: 50%;
+    animation: border-pulsate 2s infinite;
+}
+
+@keyframes border-pulsate {
+    0% {
+        border-color: rgba(0, 122, 255, 1);
+    }
+    50% {
+        border-color: rgba(0, 122, 255, 0);
+    }
+    100% {
+        border-color: rgba(0, 122, 255, 1);
+    }
+}

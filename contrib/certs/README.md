@@ -1,0 +1,1 @@
+If you need additional trusted CA certificates, you can add them to this directory. The certificates must be in PEM format. The certificates will be added to the system trust store when the image is built. The certificates must have a .crt file extension.

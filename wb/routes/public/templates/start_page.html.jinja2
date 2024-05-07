@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Resource guide</title>
+    <style>
+      body {
+        background-color: #f1f2f3;
+        color: #123456;
+        font-family: 'Helvetica CY', 'Nimbus Sans L', sans-serif;
+      }
+    </style>
+</head>
+<body>
+    <table align="center" cellspacing="20">
+      <tr><td>
+        <input type="text" onkeyup="tableSearch()" placeholder="Search..." id="search-text">
+      </td></tr>
+    </table>
+    <table align="center" border="1" bordercolor="grey" cellpadding="10" width="800" id="info-table">
+        <tr bgcolor="#dddfff">
+            <th>Resource</th>
+            <th>Description</th>
+        </tr>
+        {% for item in links %}
+            <tr>
+                <td><a href="{{ item.link }}">{{ item.name }}</a></td>
+                <td>{{ item.description }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    <script type="text/javascript">
+    function tableSearch() {
+      var phrase = document.getElementById('search-text');
+      var table = document.getElementById('info-table');
+      var regPhrase = new RegExp(phrase.value, 'i');
+      var flag = false;
+      for (var i = 1; i < table.rows.length; i++) {
+        flag = false;
+        for (var j = table.rows[i].cells.length - 1; j >= 0; j--) {
+            flag = regPhrase.test(table.rows[i].cells[j].innerHTML);
+            if (flag) break;
+        }
+        if (flag) {
+            table.rows[i].style.display = "";
+        } else {
+            table.rows[i].style.display = "none";
+        }
+      }
+    }
+    </script>
+</body>
+</html>

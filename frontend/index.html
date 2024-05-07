@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+        <title>Workbench</title>
+
+        <link
+            rel="apple-touch-icon"
+            sizes="180x180"
+            href="/apple-touch-icon.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="32x32"
+            href="/favicon-32x32.png"
+        />
+        <link
+            rel="icon"
+            type="image/png"
+            sizes="16x16"
+            href="/favicon-16x16.png"
+        />
+        <link rel="manifest" href="/site.webmanifest" />
+        <meta name="apple-mobile-web-app-title" content="Workbench" />
+        <meta name="application-name" content="Workbench" />
+        <meta name="msapplication-TileColor" content="#603cba" />
+        <meta name="theme-color" content="#ffffff" />
+        <!-- Runtime environment variables -->
+        <script src="/assets/env-${ENV_FILENAME_HASH}.js"></script>
+
+        <!-- Open Web Analytics -->
+        <script type="text/javascript">
+            //<![CDATA[
+            window.owa_baseUrl = "${OWA_URL}";
+            window.owa_cmds = window.owa_cmds || [];
+            window.owa_cmds.push(["setSiteId", "${OWA_SITE_ID}"]);
+            window.owa_cmds.push(["trackPageView"]);
+            window.owa_cmds.push(["trackClicks"]);
+
+            (function () {
+                const _owa = document.createElement("script");
+                _owa.type = "text/javascript";
+                _owa.async = true;
+                _owa.src =
+                    window.owa_baseUrl +
+                    "modules/base/js/owa.tracker-combined-min.js";
+                const _owa_s = document.getElementsByTagName("script")[0];
+                _owa_s.parentNode.insertBefore(_owa, _owa_s);
+            })();
+            //]]>
+        </script>
+    </head>
+
+    <body>
+        <noscript>You need to enable JavaScript to run this app.</noscript>
+        <div id="root"></div>
+        <script type="module" src="/src/index.tsx"></script>
+    </body>
+</html>

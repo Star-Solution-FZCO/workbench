@@ -1,0 +1,12 @@
+.ck-editor {
+    height: 100% !important;
+}
+
+.ck-editor__main {
+    height: 100%;
+}
+
+.ck-editor__main ul,
+ol {
+    padding-left: 40px;
+}

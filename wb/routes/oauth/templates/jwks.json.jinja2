@@ -1,0 +1,12 @@
+{
+  "keys": [
+    {
+      "kty": "RSA",
+      "use": "sig",
+      "x5c": [ "{{ jws_data['x5c'] }}" ],
+      "x5t": "{{ jws_data['x5t'] }}",
+      "e": "{{ jws_data['e'] }}",
+      "n": "{{ jws_data['n'] }}"
+    }
+  ]
+}

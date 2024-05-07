@@ -1,0 +1,31 @@
+{% macro format_employee(emp) %}
+    {%- if val == 0 or val | string == '0:00:00' %}-{% else %}{{ val }}{% endif -%}
+    <a href="{{ public_base_url }}/employees/view/{{ emp.id }}">{{ emp.english_name }} ({{ emp.email }}{% if emp.pararam %}, @{{ emp.pararam }}{% endif %})</a>
+{%- endmacro %}
+{% macro format_team(team) %}
+    {%- if team -%}
+        <a href="{{ public_base_url }}/teams/view/{{ team.id }}">{{ team.name }}</a>
+    {%- else -%}
+        -
+    {%- endif -%}
+{%- endmacro %}
+<table border=1>
+    <thead>
+        <tr>
+            <td>Time</td>
+            <td>Employee</td>
+            <td>Old team</td>
+            <td>New team</td>
+        </tr>
+    </thead>
+    <tbody>
+        {% for rec in recs %}
+            <tr>
+                <td>{{ rec.time.strftime('%d %b %Y %H:%M:%S') }}</td>
+                <td>{{ format_employee(rec.employee) }}</td>
+                <td>{{ format_team(rec.source_team) }}</td>
+                <td>{{ format_team(rec.dest_team) }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>

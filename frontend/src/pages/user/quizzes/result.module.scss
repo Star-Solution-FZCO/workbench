@@ -1,0 +1,37 @@
+$correct-color: rgb(38, 173, 96);
+$incorrect-color: rgb(235, 87, 87);
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    border-width: 1px;
+    border-style: solid;
+    border-radius: 8px;
+    border-color: #ccc;
+
+    &_correct {
+        background-color: rgba(38, 173, 96, 0.07);
+        border-color: $correct-color;
+        color: $correct-color;
+    }
+
+    &_incorrect {
+        background-color: rgba(235, 87, 87, 0.07);
+        border-color: $incorrect-color;
+        color: $incorrect-color;
+    }
+
+    &__radio {
+        padding: 0;
+
+        &_correct {
+            color: $correct-color !important;
+        }
+
+        &_incorrect {
+            color: $incorrect-color !important;
+        }
+    }
+}

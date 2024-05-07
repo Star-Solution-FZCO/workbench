@@ -1,0 +1,17 @@
+.team-node {
+    font-size: 14;
+    text-anchor: middle;
+
+    .text {
+        fill: #000;
+        stroke: #000;
+        stroke-width: 1;
+        text-decoration: none;
+
+        &:hover {
+            fill: #0052cc;
+            stroke: #0052cc;
+            text-decoration: underline;
+        }
+    }
+}

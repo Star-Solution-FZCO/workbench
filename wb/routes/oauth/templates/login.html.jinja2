@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <title>Login page</title>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="initial-scale=1, width=device-width" />
+        <script
+            crossorigin
+            src="https://unpkg.com/react@latest/umd/react.production.min.js"
+        ></script>
+        <script
+            crossorigin
+            src="https://unpkg.com/react-dom@latest/umd/react-dom.production.min.js"
+        ></script>
+        <script
+            src="https://unpkg.com/@mui/material@latest/umd/material-ui.production.min.js"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://unpkg.com/@babel/standalone@latest/babel.min.js"
+            crossorigin="anonymous"
+        ></script>
+        <!-- Fonts to support Material Design -->
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;600;700&display=swap"
+        />
+        <!-- Icons to support Material Design -->
+        <link
+            rel="stylesheet"
+            href="https://fonts.googleapis.com/icon?family=Material+Icons|Material+Icons+Outlined"
+        />
+
+        <style>
+            body {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .error-message {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                text-align: center;
+                color: rgb(95, 33, 32);
+                border: 1px solid rgb(229, 115, 115);
+                margin-top: 48px;
+                border-radius: 4px;
+                padding: 6px 16px;
+            }
+
+            .error-message p {
+                padding: 8px 0;
+                margin: 0;
+            }
+
+            .error-message i {
+                color: rgb(244, 67, 54);
+            }
+        </style>
+    </head>
+
+    <body>
+        {% if error %}
+        <div class="error-message">
+            <i class="material-icons-outlined">error</i>
+            <p>{{ error }}</p>
+        </div>
+        {% endif %}
+        <div id="root"></div>
+        <script type="text/babel">
+            const {
+                ThemeProvider,
+                createTheme,
+                CssBaseline,
+                Typography,
+                Container,
+                Box,
+                TextField,
+                FormControlLabel,
+                Checkbox,
+                Button,
+                Avatar,
+                Alert,
+            } = MaterialUI;
+
+            const themeOptions = {
+                components: {
+                    MuiButton: {
+                        defaultProps: {
+                            disableElevation: true,
+                        },
+                        styleOverrides: {
+                            root: {
+                                textTransform: "none",
+                            },
+                            sizeMedium: {
+                                padding: "8px 20px",
+                            },
+                            textSizeMedium: {
+                                padding: "9px 16px",
+                            },
+                        },
+                    },
+                    MuiButtonBase: {
+                        defaultProps: {
+                            disableRipple: true,
+                        },
+                    },
+                },
+                palette: {
+                    primary: {
+                        main: "#5048E5",
+                    },
+                    secondary: {
+                        main: "#10B981",
+                    },
+                },
+                shape: {
+                    borderRadius: 8,
+                    border: "1px solid rgba(0, 0, 0, 0.42)",
+                },
+                typography: {
+                    button: {
+                        fontWeight: 600,
+                    },
+                    fontFamily:
+                        'Roboto, "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
+
+                    h1: {
+                        fontWeight: 700,
+                        fontSize: "3.5rem",
+                        lineHeight: 1.375,
+                    },
+
+                    h5: {
+                        fontWeight: 600,
+                        fontSize: "1.5rem",
+                        lineHeight: 1.375,
+                    },
+                },
+            };
+
+            const theme = createTheme(themeOptions);
+
+            function App() {
+                const containerStyles = {
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    mt: 8,
+                };
+
+                const avatarStyles = { bgcolor: "secondary.main", m: 1 };
+
+                const formStyles = {
+                    mt: 1,
+                };
+
+                const buttonStyles = {
+                    mt: 3,
+                };
+
+                return (
+                    <Container component="main" maxWidth="xs">
+                        <Box sx={containerStyles}>
+                            <Avatar sx={avatarStyles}>
+                                <i className="material-icons-outlined">lock</i>
+                            </Avatar>
+
+                            <Typography component="h1" variant="h5">
+                                OAuth Login
+                            </Typography>
+
+                            <Box component="form" sx={formStyles} method="post">
+                                <TextField
+                                    id="login"
+                                    label="Login"
+                                    name="login"
+                                    autoComplete="login"
+                                    variant="standard"
+                                    margin="normal"
+                                    required
+                                    fullWidth
+                                    autoFocus
+                                />
+
+                                <TextField
+                                    id="password"
+                                    type="password"
+                                    label="Password"
+                                    name="password"
+                                    autoComplete="current-password"
+                                    variant="standard"
+                                    margin="normal"
+                                    required
+                                    fullWidth
+                                />
+
+                                <FormControlLabel
+                                    control={<Checkbox name="remember" />}
+                                    label="Remember me"
+                                />
+
+                                <Button
+                                    sx={buttonStyles}
+                                    type="submit"
+                                    variant="contained"
+                                    fullWidth
+                                >
+                                    Login
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Container>
+                );
+            }
+
+            const root = ReactDOM.createRoot(document.getElementById("root"));
+            root.render(
+                <ThemeProvider theme={theme}>
+                    <CssBaseline />
+                    <App />
+                </ThemeProvider>,
+            );
+        </script>
+    </body>
+</html>
