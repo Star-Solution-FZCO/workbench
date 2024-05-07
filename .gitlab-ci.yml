@@ -1,5 +1,7 @@
 stages:
   - lint
+  - build
+  - release
 
 default:
   image: docker:26.1
@@ -11,13 +13,54 @@ lint-backend:
   script:
     - docker build -t $CI_PROJECT_NAME-backend:test-$CI_JOB_ID --target test -f Dockerfile .
     - docker run --rm $CI_PROJECT_NAME-backend:test-$CI_JOB_ID
-  except:
-    - tags
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
 
 lint-frontend:
   stage: lint
   script:
     - docker build -t $CI_PROJECT_NAME-frontend:test-$CI_JOB_ID -f Dockerfile_frontend .
     - docker run --rm $CI_PROJECT_NAME-frontend:test-$CI_JOB_ID /bin/sh
-  except:
-    - tags
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+build-backend:
+  stage: build
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA --target prod -f Dockerfile .
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:dev
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/backend:dev
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG == null'
+
+build-frontend:
+  stage: build
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA -f Dockerfile_frontend .
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/frontend:dev
+    - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+    - docker push $CI_REGISTRY_IMAGE/frontend:dev
+  rules:
+    - if: '$CI_COMMIT_REF_NAME == "master" && $CI_COMMIT_TAG == null'
+
+
+release:
+  stage: release
+  script:
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker pull $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA
+    - docker pull $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/backend:latest
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE/frontend:latest
+    - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_IMAGE/backend:latest
+    - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG
+    - docker push $CI_REGISTRY_IMAGE/frontend:latest
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^vd+.d+.d+$/'
