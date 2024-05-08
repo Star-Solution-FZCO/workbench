@@ -55,7 +55,7 @@ build-release-backend:
     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE/backend:latest
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
 
 build-release-frontend:
   stage: build
@@ -66,4 +66,4 @@ build-release-frontend:
     - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE/frontend:latest
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^v\d+\.\d+\.\d+$/'
+    - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
