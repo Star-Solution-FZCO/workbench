@@ -36,6 +36,7 @@ class ReportItem(BaseReportItem):
     missed: int = Field(title='Missed days')
     sick_days: int = Field(title='Sick days')
     vacations: int = Field(title='Vacation days')
+    working_days: int = Field(title='Working days')
 
     @classmethod
     def from_presence_item(
@@ -53,6 +54,7 @@ class ReportItem(BaseReportItem):
             missed=1 if not _is_weekend(day_type) and not has_activity else 0,
             sick_days=1 if day_type == m.DayType.SICK_DAY else 0,
             vacations=1 if day_type == m.DayType.VACATION else 0,
+            working_days=1 if day_type.is_working_day() else 0,
         )
 
 
@@ -158,6 +160,14 @@ async def generate_presence_report(
                                 days_status[employees_by_email[user_email].id].values(),
                             )
                         )
+                    ),
+                    working_days=len(
+                        list(
+                            filter(
+                                lambda d: d.is_working_day(),
+                                days_status[employees_by_email[user_email].id].values(),
+                            )
+                        ),
                     ),
                 ),
             )

@@ -25,7 +25,7 @@ const PresenceCells: FC<IPresenceCellsProps> = ({
     return (
         <>
             {Object.entries(item)
-                .slice(total ? 2 : 0, -3)
+                .slice(total ? 2 : 0, -4)
                 .map(([key, value]) => {
                     let newValue = value;
 
@@ -153,7 +153,7 @@ const PresenceDetails: FC<IPresenceDetailsProps> = ({
                 </tr>
 
                 {Object.entries(presence.total)
-                    .slice(-3)
+                    .slice(-4)
                     .map(([key, value]) => (
                         <Fragment key={nanoid()}>
                             <tr>
