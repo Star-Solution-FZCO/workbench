@@ -26,6 +26,7 @@ class ReportItem(BaseReportItem):
     missed: int = Field(title='Missed')
     vacations: int = Field(title='Vacations')
     sick_days: int = Field(title='Sick days')
+    working_days: int = Field(title='Working days')
 
 
 def _is_weekend(day_type: m.DayType) -> bool:
@@ -124,6 +125,14 @@ async def generate_presence_summary_report(
                         list(
                             filter(
                                 lambda d: d == m.DayType.SICK_DAY,
+                                days_status[employees_by_email[user_email].id].values(),
+                            )
+                        )
+                    ),
+                    working_days=len(
+                        list(
+                            filter(
+                                lambda d: d.is_working_day(),
                                 days_status[employees_by_email[user_email].id].values(),
                             )
                         )

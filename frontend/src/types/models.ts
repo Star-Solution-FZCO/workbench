@@ -611,6 +611,7 @@ export type PresenceDayT = {
     missed: number;
     sick_days: number;
     vacations: number;
+    working_days: number;
 };
 
 export type PresenceDetailsT = {
@@ -636,6 +637,7 @@ export type PresenceSummaryT = {
         sick_days: number;
         total: string;
         vacations: number;
+        working_days: number;
     };
 };
 

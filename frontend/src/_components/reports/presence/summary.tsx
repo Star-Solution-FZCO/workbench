@@ -29,6 +29,7 @@ const PresenceSummary: FC<IPresenceSummaryProps> = ({ data }) => {
                         <th>Missed</th>
                         <th>Vacations</th>
                         <th>Sick days</th>
+                        <th>Working days</th>
                     </tr>
                 </thead>
 
@@ -45,6 +46,7 @@ const PresenceSummary: FC<IPresenceSummaryProps> = ({ data }) => {
                             <td>{record.item.missed}</td>
                             <td>{record.item.vacations}</td>
                             <td>{record.item.sick_days}</td>
+                            <td>{record.item.working_days}</td>
                         </tr>
                     ))}
                 </tbody>
