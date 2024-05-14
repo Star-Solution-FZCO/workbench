@@ -51,6 +51,7 @@ async def get_employee_by_id(
             selectinload(m.Employee.mentors),
             selectinload(m.Employee.team).selectinload(m.Team.manager),
             selectinload(m.Employee.watchers),
+            selectinload(m.Employee.tm),
         )
     )
     return emp

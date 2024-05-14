@@ -7,10 +7,8 @@ import sqlalchemy as sa
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import timetracking.models as tmm
 import wb.models as m
-from timetracking.db import tm_multithreading_safe_async_session
-from timetracking.utils import get_tm_day_start
+from shared_utils.dateutils import day_start
 from wb.celery_app import celery_app
 from wb.db import multithreading_safe_async_session
 
@@ -25,11 +23,11 @@ def activity_boundary(act: m.Activity, day: date) -> Tuple[datetime, datetime]:
         return act.time, act.time + timedelta(seconds=act.duration)
     left = act.time - WORK_TIME_DELTA
     right = act.time + WORK_TIME_DELTA
-    left = left if left >= get_tm_day_start(day) else get_tm_day_start(day)
+    left = left if left >= day_start(day) else day_start(day)
     right = (
         right
-        if right < get_tm_day_start(day + timedelta(days=1))
-        else get_tm_day_start(day + timedelta(days=1)) - timedelta(seconds=1)
+        if right < day_start(day + timedelta(days=1))
+        else day_start(day + timedelta(days=1)) - timedelta(seconds=1)
     )
     return left, right
 
@@ -55,23 +53,23 @@ def calc_activities_interval(
 
 
 async def insert_log(
-    wb_user_id: int,
-    type: str,  # pylint: disable=redefined-builtin
+    employee_id: int,
+    status: m.TMRecordType,
     time: datetime,
-    tm_session: AsyncSession,
+    session: AsyncSession,
 ) -> None:
     try:
-        obj = tmm.Log(
-            n=wb_user_id,
-            type=type,
+        obj = m.TMRecord(
+            employee_id=employee_id,
+            status=status,
             time=time,
-            source='act',
+            source='activity',
         )
-        async with tm_session.begin_nested():
-            tm_session.add(obj)
+        async with session.begin_nested():
+            session.add(obj)
             with warnings.catch_warnings():
                 warnings.simplefilter('ignore')
-                await tm_session.commit()
+                await session.commit()
     except IntegrityError:
         pass
 
@@ -81,31 +79,25 @@ async def correct_employee_tm_logs(
     day: date,
     activity_filter: Any,
     session: AsyncSession,
-    tm_session: AsyncSession,
 ) -> None:
     # pylint: disable=too-many-locals, too-many-branches, too-many-statements
-    wb_user: tmm.User | None = await tm_session.scalar(
-        sa.select(tmm.User).where(tmm.User.email == employee.email)
-    )
-    if not wb_user:
-        return
     next_day = day + timedelta(days=1)
-    tm_logs_raw = await tm_session.scalars(
-        sa.select(tmm.Log)
+    tm_logs_raw = await session.scalars(
+        sa.select(m.TMRecord)
         .where(
-            tmm.Log.n == wb_user.userID,
-            tmm.Log.time >= get_tm_day_start(day),
-            tmm.Log.time < get_tm_day_start(next_day),
+            m.TMRecord.employee_id == employee.id,
+            m.TMRecord.time >= day_start(day),
+            m.TMRecord.time < day_start(next_day),
         )
-        .order_by(tmm.Log.time)
+        .order_by(m.TMRecord.time)
     )
-    tm_logs: List[tmm.Log] = list(tm_logs_raw.all())
-    curr_wb_state = 'go'
+    tm_logs: list[m.TMRecord] = list(tm_logs_raw.all())
+    curr_wb_state = m.TMRecordType.LEAVE
     activities_raw = await session.scalars(
         sa.select(m.Activity).where(
             m.Activity.employee_id == employee.id,
-            m.Activity.time >= get_tm_day_start(day),
-            m.Activity.time < get_tm_day_start(next_day),
+            m.Activity.time >= day_start(day),
+            m.Activity.time < day_start(next_day),
             activity_filter,
         )
     )
@@ -120,96 +112,92 @@ async def correct_employee_tm_logs(
                 break
             if tm_logs[next_wb_act].time == interval[0]:
                 time_delta = timedelta(seconds=1)
-            curr_wb_state = tm_logs[next_wb_act].type
+            curr_wb_state = tm_logs[next_wb_act].status
             next_wb_act += 1
         new_opened_state = None
         if curr_wb_state == 'go':
             await insert_log(
-                wb_user_id=wb_user.userID,
-                type='come',
+                employee_id=employee.id,
+                status=m.TMRecordType.COME,
                 time=interval[0] + time_delta,
-                tm_session=tm_session,
+                session=session,
             )
-            curr_wb_state = 'come'
-            new_opened_state = 'come'
-        elif curr_wb_state == 'away':
+            new_opened_state = curr_wb_state = m.TMRecordType.COME
+        elif curr_wb_state == m.TMRecordType.AWAY:
             await insert_log(
-                wb_user_id=wb_user.userID,
-                type='awake',
+                employee_id=employee.id,
+                status=m.TMRecordType.AWAKE,
                 time=interval[0] + time_delta,
-                tm_session=tm_session,
+                session=session,
             )
-            curr_wb_state = 'awake'
-            new_opened_state = 'awake'
+            new_opened_state = curr_wb_state = m.TMRecordType.AWAKE
         while next_wb_act < len_wb_act:
             if tm_logs[next_wb_act].time > interval[1]:
                 break
-            curr_wb_state = tm_logs[next_wb_act].type
-            if curr_wb_state == 'go':
+            curr_wb_state = tm_logs[next_wb_act].status
+            if curr_wb_state == m.TMRecordType.LEAVE:
                 if tm_logs[next_wb_act].time != interval[1]:
                     await insert_log(
-                        wb_user_id=wb_user.userID,
-                        type='come',
+                        employee_id=employee.id,
+                        status=m.TMRecordType.COME,
                         time=tm_logs[next_wb_act].time + timedelta(seconds=1),
-                        tm_session=tm_session,
+                        session=session,
                     )
-                    curr_wb_state = 'come'
-                    new_opened_state = 'come'
+                    new_opened_state = curr_wb_state = m.TMRecordType.COME
                 else:
                     new_opened_state = None
-            elif curr_wb_state == 'away':
+            elif curr_wb_state == m.TMRecordType.AWAY:
                 if tm_logs[next_wb_act].time != interval[1]:
                     await insert_log(
-                        wb_user_id=wb_user.userID,
-                        type='awake',
+                        employee_id=employee.id,
+                        status=m.TMRecordType.AWAKE,
                         time=tm_logs[next_wb_act].time + timedelta(seconds=1),
-                        tm_session=tm_session,
+                        session=session,
                     )
-                    curr_wb_state = 'awake'
-                    new_opened_state = 'awake'
+                    new_opened_state = curr_wb_state = m.TMRecordType.AWAKE
                 else:
                     new_opened_state = None
-            elif curr_wb_state == 'come':
+            elif curr_wb_state == m.TMRecordType.COME:
                 new_opened_state = None
                 await insert_log(
-                    wb_user_id=wb_user.userID,
-                    type='go',
+                    employee_id=employee.id,
+                    status=m.TMRecordType.LEAVE,
                     time=tm_logs[next_wb_act].time - timedelta(seconds=1),
-                    tm_session=tm_session,
+                    session=session,
                 )
-            elif curr_wb_state == 'awake':
+            elif curr_wb_state == m.TMRecordType.AWAKE:
                 new_opened_state = None
                 await insert_log(
-                    wb_user_id=wb_user.userID,
-                    type='away',
+                    employee_id=employee.id,
+                    status=m.TMRecordType.AWAY,
                     time=tm_logs[next_wb_act].time - timedelta(seconds=1),
-                    tm_session=tm_session,
+                    session=session,
                 )
             next_wb_act += 1
         if not new_opened_state:
             continue
-        if new_opened_state == 'come':
+        if new_opened_state == m.TMRecordType.COME:
             await insert_log(
-                wb_user_id=wb_user.userID,
-                type='go',
+                employee_id=employee.id,
+                status=m.TMRecordType.LEAVE,
                 time=interval[1],
-                tm_session=tm_session,
+                session=session,
             )
-            curr_wb_state = 'go'
-        elif new_opened_state == 'awake':
+            curr_wb_state = m.TMRecordType.LEAVE
+        elif new_opened_state == m.TMRecordType.AWAKE:
             await insert_log(
-                wb_user_id=wb_user.userID,
-                type='away',
+                employee_id=employee.id,
+                status=m.TMRecordType.AWAY,
                 time=interval[1],
-                tm_session=tm_session,
+                session=session,
             )
             curr_wb_state = 'away'
     if next_wb_act == len_wb_act and curr_wb_state == 'away':
         await insert_log(
-            wb_user_id=wb_user.userID,
-            type='go',
+            employee_id=employee.id,
+            status=m.TMRecordType.LEAVE,
             time=intervals[-1][1] + timedelta(seconds=1),
-            tm_session=tm_session,
+            session=session,
         )
 
 
@@ -226,15 +214,13 @@ async def correct_tm_logs(day: date) -> None:
             )
         )
         flt = m.Activity.source_id.notin_([s.id for s in excluded_sources.all()])
-        async with tm_multithreading_safe_async_session() as tm_session:
-            for emp in employees:
-                await correct_employee_tm_logs(
-                    emp,
-                    day,
-                    activity_filter=flt,
-                    session=session,
-                    tm_session=tm_session,
-                )
+        for emp in employees:
+            await correct_employee_tm_logs(
+                emp,
+                day,
+                activity_filter=flt,
+                session=session,
+            )
 
 
 @celery_app.task(name='correct_yesterday_tm_log')

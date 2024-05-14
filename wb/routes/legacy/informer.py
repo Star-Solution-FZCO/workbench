@@ -5,8 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared_utils.file import async_iter_file
-from timetracking.config import TM_CLIENT_DIR, TM_CLIENT_VERSION
-from timetracking.db import get_tm_db_session
+from wb.config import TM_CLIENT_DIR, TM_CLIENT_VERSION
 from wb.db import get_db_session
 
 from ._base import HEADERS, auth_tm_user
@@ -50,7 +49,6 @@ XML_TREE = """<root>
 async def informer(
     req: Request,
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> Response:
     # pylint: disable=too-many-return-statements
     body = await req.form()
@@ -89,7 +87,7 @@ async def informer(
                 'Content-Transfer-Encoding': 'binary',
             },
         )
-    emp = await auth_tm_user(body, session=session, tm_session=tm_session)
+    emp = await auth_tm_user(body, session=session)
     if not emp:
         return Response(
             b'invalid!',

@@ -1,11 +1,10 @@
 from datetime import date
-from typing import Any, Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import timetracking.models as tmm
 import wb.models as m
 from shared_utils.dateutils import format_timedelta, sum_timedelta
 from wb.schemas import ShortEmployeeOut
@@ -63,53 +62,39 @@ async def generate_presence_report(
     start: date,
     end: date,
     session: AsyncSession,
-    tm_session: AsyncSession,
 ) -> DaysSimpleReport[ReportItem]:
     # pylint: disable=too-many-locals
     employees_raw = await session.scalars(
         sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
     )
-    employees: Sequence[m.Employee] = employees_raw.all()
-    employees_by_email: dict[str, m.Employee] = {emp.email: emp for emp in employees}
-    tm_users_raw = await tm_session.scalars(
-        sa.select(tmm.User).filter(tmm.User.email.in_([emp.email for emp in employees]))
-    )
-    tm_users: list[str, tmm.User] = {u.email: u for u in tm_users_raw.all()}
-    presence = await calc_presence(
-        list(tm_users.values()), start, end, tm_session=tm_session
-    )
+    employees: list[m.Employee] = list(employees_raw.all())
+    presence = await calc_presence(employees, start, end, session=session)
     days_status = await get_employees_days_status(
-        [employees_by_email[user_email] for user_email in tm_users.keys()],
+        employees,
         start,
         end,
         session=session,
     )
     days_activity_status = await get_employees_days_activity_status(
-        [employees_by_email[user_email] for user_email in tm_users.keys()],
+        employees,
         start,
         end,
         session=session,
     )
     results: list[DaysSimpleReportItem[ReportItem]] = []
-    for user_email, user_presence in zip(tm_users.keys(), presence):
+    for emp, user_presence in zip(employees, presence):
         results.append(
             DaysSimpleReportItem(
-                employee=ShortEmployeeOut.from_obj(employees_by_email[user_email]),
+                employee=ShortEmployeeOut.from_obj(emp),
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem.from_presence_item(
                             data,
-                            day_type=days_status[employees_by_email[user_email].id][
-                                day
-                            ],
-                            has_activity=days_activity_status[
-                                employees_by_email[user_email].id
-                            ][day],
+                            day_type=days_status[emp.id][day],
+                            has_activity=days_activity_status[emp.id][day],
                         ),
-                        day_status=days_status[employees_by_email[user_email].id][day],
-                        has_activity=days_activity_status[
-                            employees_by_email[user_email].id
-                        ][day],
+                        day_status=days_status[emp.id][day],
+                        has_activity=days_activity_status[emp.id][day],
                     )
                     for day, data in user_presence.items()
                 },
@@ -128,18 +113,12 @@ async def generate_presence_report(
                     missed=len(
                         list(
                             filter(
-                                lambda d: not days_activity_status[
-                                    employees_by_email[
-                                        user_email  # pylint: disable=cell-var-from-loop
-                                    ].id
-                                ][d],
+                                lambda d: not days_activity_status[emp.id][d],  # pylint: disable=cell-var-from-loop
                                 [
                                     day
                                     for day, _ in filter(
                                         lambda d: not _is_weekend(d[1]),
-                                        days_status[
-                                            employees_by_email[user_email].id
-                                        ].items(),
+                                        days_status[emp.id].items(),
                                     )
                                 ],
                             )
@@ -149,7 +128,7 @@ async def generate_presence_report(
                         list(
                             filter(
                                 lambda d: d == m.DayType.SICK_DAY,
-                                days_status[employees_by_email[user_email].id].values(),
+                                days_status[emp.id].values(),
                             )
                         )
                     ),
@@ -157,7 +136,7 @@ async def generate_presence_report(
                         list(
                             filter(
                                 lambda d: d == m.DayType.VACATION,
-                                days_status[employees_by_email[user_email].id].values(),
+                                days_status[emp.id].values(),
                             )
                         )
                     ),
@@ -165,7 +144,7 @@ async def generate_presence_report(
                         list(
                             filter(
                                 lambda d: d.is_working_day(),
-                                days_status[employees_by_email[user_email].id].values(),
+                                days_status[emp.id].values(),
                             )
                         ),
                     ),
