@@ -1,7 +1,8 @@
 import calendar
+from collections.abc import Sequence
 from datetime import date, timedelta
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, Sequence
+from typing import Any
 
 import sqlalchemy as sa
 from openpyxl import Workbook
@@ -9,65 +10,78 @@ from openpyxl.styles import Alignment, PatternFill
 from openpyxl.utils import get_column_letter
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import timetracking.models as tmm
 import wb.models as m
-from shared_utils.dateutils import date_range
-from timetracking.utils import get_tm_day, get_tm_day_start
+from shared_utils.dateutils import date_range, day_start
 
 __all__ = ('generate_working_time_month_report',)
 
 
 async def generate_working_time_month_report(
-    flt: Any, month: date, session: AsyncSession, tm_session: AsyncSession
+    flt: Any, month: date, session: AsyncSession
 ) -> Any:
     # pylint: disable=all
     employees_raw = await session.scalars(
         sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
     )
     employees: Sequence[m.Employee] = employees_raw.all()
-    tm_users_raw = await tm_session.scalars(
-        sa.select(tmm.User).filter(tmm.User.email.in_([emp.email for emp in employees]))
-    )
-    tm_users: Dict[str, tmm.User] = {u.email: u for u in tm_users_raw.all()}
 
     report_start = month.replace(day=1)
     report_end = month.replace(day=calendar.monthrange(month.year, month.month)[1])
     cur_date = date.today()
 
-    tm_data_raw = await tm_session.scalars(
-        sa.select(tmm.Log)
+    tm_data_raw = await session.scalars(
+        sa.select(m.TMRecord)
         .filter(
-            tmm.Log.time >= get_tm_day_start(report_start),
-            tmm.Log.time < get_tm_day_start(report_end + timedelta(days=1)),
-            tmm.Log.n.in_([u.userID for u in tm_users.values()]),
+            m.TMRecord.time >= day_start(report_start),
+            m.TMRecord.time < day_start(report_end + timedelta(days=1)),
+            m.TMRecord.employee_id.in_([emp.id for emp in employees]),
         )
-        .order_by(tmm.Log.n, tmm.Log.time)
+        .order_by(m.TMRecord.employee_id, m.TMRecord.time)
     )
-    tm_data: Dict[int, Dict[date, List[tmm.Log]]] = {
-        u.userID: {d: [] for d in date_range(report_start, report_end)}
-        for u in tm_users.values()
+    tm_data: dict[int, dict[date, list[m.TMRecord]]] = {
+        emp.id: {d: [] for d in date_range(report_start, report_end)}
+        for emp in employees
     }
     for tm_rec in tm_data_raw.all():
-        tm_data[tm_rec.n][get_tm_day(tm_rec.time)].append(tm_rec)
-    for tm_user in tm_users.values():
+        tm_data[tm_rec.employee_id][tm_rec.time.date()].append(tm_rec)
+    for emp in employees:
         transfer_come = False
         for day in date_range(report_start, report_end):
-            recs = tm_data[tm_user.userID][day]
+            recs = tm_data[emp.id][day]
             is_current_or_future = day >= cur_date
             if transfer_come:
                 recs.insert(
                     0,
-                    tmm.Log(n=tm_user.userID, type='come', time=get_tm_day_start(day)),
+                    m.TMRecord(
+                        employee_id=emp.id,
+                        status=m.TMRecordType.COME,
+                        time=day_start(day),
+                    ),
                 )
                 transfer_come = False
             if not recs:
                 continue
             last = recs[-1]
-            next_day_start = get_tm_day_start(day + timedelta(days=1))
-            if not is_current_or_future and last.type == 'away':
-                recs.append(tmm.Log(n=tm_user.userID, type='go', time=next_day_start))
-            elif not is_current_or_future and last.type in ('awake', 'come'):
-                recs.append(tmm.Log(n=tm_user.userID, type='go', time=next_day_start))
+            next_day_start = day_start(day + timedelta(days=1))
+            if not is_current_or_future and last.status == m.TMRecordType.AWAY:
+                recs.append(
+                    m.TMRecord(
+                        employee_id=emp.id,
+                        status=m.TMRecordType.LEAVE,
+                        time=next_day_start,
+                    )
+                )
+            elif not is_current_or_future and last.status in (
+                m.TMRecordType.AWAKE,
+                m.TMRecordType.COME,
+            ):
+                recs.append(
+                    m.TMRecord(
+                        employee_id=emp.id,
+                        status=m.TMRecordType.LEAVE,
+                        time=next_day_start,
+                    )
+                )
                 transfer_come = True
 
     wb = Workbook()
@@ -132,23 +146,18 @@ async def generate_working_time_month_report(
     current_row = 3
 
     for emp in employees:
-        if emp.email not in tm_users:
-            continue
         ws.cell(current_row, 1).value = emp.english_name
-        wb_user_id = tm_users[emp.email].userID
         workday_hours = 9
         total = timedelta()
         for index, day in enumerate(date_range(report_start, report_end)):
             multiplier = 1 if index == 0 else 3
-            if tm_data[wb_user_id][day]:
-                come = tm_data[wb_user_id][day][0].time.strftime('%H:%M')
-                leave = tm_data[wb_user_id][day][-1].time.strftime('%H:%M')
+            if tm_data[emp.id][day]:
+                come = tm_data[emp.id][day][0].time.strftime('%H:%M')
+                leave = tm_data[emp.id][day][-1].time.strftime('%H:%M')
                 total_day = str(
-                    tm_data[wb_user_id][day][-1].time - tm_data[wb_user_id][day][0].time
+                    tm_data[emp.id][day][-1].time - tm_data[emp.id][day][0].time
                 )
-                total += (
-                    tm_data[wb_user_id][day][-1].time - tm_data[wb_user_id][day][0].time
-                )
+                total += tm_data[emp.id][day][-1].time - tm_data[emp.id][day][0].time
             else:
                 come = leave = total_day = ''
             ws.cell(current_row, index * multiplier + 2).value = come

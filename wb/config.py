@@ -7,7 +7,14 @@ from typing import Any
 
 from dynaconf import Dynaconf, Validator
 
-__all__ = ('CONFIG', 'STORAGE_DIR', 'API_KEYS', 'AuthModeT')
+__all__ = (
+    'CONFIG',
+    'STORAGE_DIR',
+    'API_KEYS',
+    'AuthModeT',
+    'TM_CLIENT_VERSION',
+    'TM_CLIENT_DIR',
+)
 
 
 @dataclass
@@ -150,6 +157,8 @@ CONFIG = Dynaconf(
         Validator(
             'CALDAV_URL', 'CALDAV_USERNAME', 'CALDAV_PASSWORD', cast=str, default=''
         ),
+        Validator('TM_CLIENT_VERSION', cast=int, required=True),
+        Validator('TM_CLIENT_DIR', default='/data/tm'),
     ],
 )
 CONFIG.configure()
@@ -159,3 +168,6 @@ API_KEYS = parse_api_keys(CONFIG.api_keys)
 if CONFIG.DEV_MODE:
     CONFIG.SEND_NOTIFICATION_TO_CONSOLE = True
     CONFIG.AUTH_MODE = AuthModeT.DEV
+
+TM_CLIENT_VERSION = CONFIG.TM_CLIENT_VERSION
+TM_CLIENT_DIR = CONFIG.TM_CLIENT_DIR

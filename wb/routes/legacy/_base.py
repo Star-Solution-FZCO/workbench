@@ -1,8 +1,8 @@
 import sqlalchemy as sa
 from fastapi.datastructures import FormData
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-import timetracking.models as tmm
 import wb.models as m
 
 __all__ = (
@@ -20,9 +20,7 @@ HEADERS = {
 }
 
 
-async def auth_tm_user(
-    body: FormData, session: AsyncSession, tm_session: AsyncSession
-) -> m.Employee | None:
+async def auth_tm_user(body: FormData, session: AsyncSession) -> m.Employee | None:
     # pylint: disable=too-many-return-statements
     if not isinstance((login := body.get('login')), str):
         return None
@@ -30,22 +28,19 @@ async def auth_tm_user(
         return None
     if not login or not password:
         return None
-    user = await tm_session.scalar(
+    user = await session.scalar(
         sa.select(
-            tmm.User,
-        ).where(
-            tmm.User.login == login,
+            m.Employee,
         )
+        .where(
+            m.Employee.account == login,
+        )
+        .options(selectinload(m.Employee.tm))
     )
     if not user:
         return None
-    if user.password != password:
+    if not user.tm:
         return None
-    emp = await session.scalar(
-        sa.select(
-            m.Employee,
-        ).where(
-            m.Employee.email == user.email,
-        )
-    )
-    return emp
+    if not user.tm.check_key(password):
+        return None
+    return user

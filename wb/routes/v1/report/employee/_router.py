@@ -9,7 +9,6 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from timetracking.db import get_tm_db_session
 from wb.db import get_db_session
 from wb.schemas import (
     BaseListOutput,
@@ -118,12 +117,9 @@ async def get_vacation_free_dats_report_csv(
 async def get_working_time_month_report(
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> StreamingResponse:
     flt = _get_employee_filter(query.filter)
-    res = await generate_working_time_month_report(
-        flt, date.today(), session=session, tm_session=tm_session
-    )
+    res = await generate_working_time_month_report(flt, date.today(), session=session)
     headers = {
         'Content-Disposition': 'attachment; filename="working_time_month_report.xlsx"'
     }
@@ -200,12 +196,9 @@ async def get_presence_report(
     end: date,
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> BaseListOutput:
     flt = _get_employee_filter(query.filter)
-    report = await generate_presence_report(
-        flt, start, end, session=session, tm_session=tm_session
-    )
+    report = await generate_presence_report(flt, start, end, session=session)
     return report.make_list_output()
 
 
@@ -215,12 +208,9 @@ async def get_presence_report_csv(
     end: date,
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> StreamingResponse:
     flt = _get_employee_filter(query.filter)
-    report = await generate_presence_report(
-        flt, start, end, session=session, tm_session=tm_session
-    )
+    report = await generate_presence_report(flt, start, end, session=session)
     output = report.make_csv()
     return StreamingResponse(iter([output.getvalue()]), media_type='text/csv')
 
@@ -231,12 +221,9 @@ async def get_presence_summary_report(
     end: date,
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> BaseListOutput:
     flt = _get_employee_filter(query.filter)
-    report = await generate_presence_summary_report(
-        flt, start, end, session=session, tm_session=tm_session
-    )
+    report = await generate_presence_summary_report(flt, start, end, session=session)
     return report.make_list_output()
 
 
@@ -246,12 +233,9 @@ async def get_presence_summary_report_csv(
     end: date,
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> StreamingResponse:
     flt = _get_employee_filter(query.filter)
-    report = await generate_presence_summary_report(
-        flt, start, end, session=session, tm_session=tm_session
-    )
+    report = await generate_presence_summary_report(flt, start, end, session=session)
     output = report.make_csv()
     return StreamingResponse(iter([output.getvalue()]), media_type='text/csv')
 

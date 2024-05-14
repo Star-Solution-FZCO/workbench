@@ -15,8 +15,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import wb.models as m
-from timetracking.db import get_tm_db_session
-from timetracking.models import User as TMUser
 from wb.acl import (
     is_employee_field_editable,
     is_employee_field_viewable,
@@ -53,7 +51,6 @@ from wb.services.notifications import (
     NotificationDestinationTeam,
     NotificationMessage,
 )
-from wb.services.tm import create_tm_user, update_tm_user
 from wb.utils.current_user import current_employee
 from wb.utils.db import count_select_query_results, resolve_db_id, resolve_db_ids
 from wb.utils.email import check_email_domain
@@ -167,8 +164,12 @@ async def create_employee(
         holiday_set_id=holiday_set.value if holiday_set else default_holiday_set.id,
     )
     session.add(schedule)
+    tm_obj = m.EmployeeTM(
+        employee_id=obj.id,
+        key_hash=m.EmployeeTM.hash_key(secrets.token_urlsafe(16)),
+    )
+    session.add(tm_obj)
     await session.commit()
-    asyncio.create_task(create_tm_user(obj))
     subj = f'New employee {obj.english_name}'
     txt = (
         f'<a href="{CONFIG.PUBLIC_BASE_URL}/employees/view/{obj.id}">{obj.english_name}</a><br>'
@@ -485,7 +486,6 @@ async def dismiss_employee(
             ]
         ).send()
     await send_notification_to_people_project(subj, txt)
-    asyncio.create_task(update_tm_user(emp))
     return make_id_output(emp.id)
 
 
@@ -642,7 +642,6 @@ async def employee_update(
         await send_notification_to_people_project(
             notification_pp[0], notification_pp[1]
         )
-    asyncio.create_task(update_tm_user(emp))
     return make_id_output(emp.id)
 
 
@@ -758,7 +757,6 @@ async def get_day_status(
 async def set_tm_key(
     employee_id: EmployeeIDParamT,
     session: AsyncSession = Depends(get_db_session),
-    tm_session: AsyncSession = Depends(get_tm_db_session),
 ) -> BasePayloadOutput[EmployeeTMKeyUpdateOut]:
     curr_user = current_employee()
     if not curr_user.is_admin and curr_user.id != employee_id:
@@ -767,18 +765,15 @@ async def set_tm_key(
             detail='only admins can change the tm key for another user',
         )
     emp = await resolve_employee_id_param(employee_id, session=session)
-    tm_user: TMUser | None = await tm_session.scalar(
-        sa.select(TMUser).where(TMUser.email == emp.email)
-    )
-    if not tm_user:
-        raise HTTPException(HTTPStatus.NOT_FOUND, detail='tm user not found')
     tm_key = secrets.token_urlsafe(16)
-    tm_user.set_tm_key(tm_key)
-
-    try:
-        await tm_session.commit()
-    except Exception as err:
-        raise HTTPException(
-            HTTPStatus.INTERNAL_SERVER_ERROR, detail=f'fail to change tm key {err}'
-        ) from err
+    if not emp.tm:
+        tm_obj = m.EmployeeTM(
+            employee_id=emp.id,
+            last_logon=datetime.utcnow(),
+            key_hash=m.EmployeeTM.hash_key(tm_key),
+        )
+        session.add(tm_obj)
+    else:
+        emp.tm.set_key(tm_key)
+    await session.commit()
     return make_success_output(payload=EmployeeTMKeyUpdateOut(tm_key=tm_key))
