@@ -1,4 +1,5 @@
 import asyncio
+import re
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Sequence, Tuple
 
@@ -13,6 +14,7 @@ __all__ = ('PararamConnector',)
 
 ALLOWED_ACTIONS = (ActivityAction.POST,)
 USERS_CHUNK_SIZE = 20
+PARARAM_UNIQUE_NAME_REGEX = re.compile(r'^[a-z][a-z0-9_]+$')
 
 
 def ts_to_datetime(timestamp: float) -> datetime:
@@ -89,7 +91,10 @@ class PararamConnector(Connector):
         return results
 
     def _resolve_user_names(self, users: Sequence[str]) -> dict[str, int]:
-        data = self.__bot.request(f'/core/user?unames={",".join(users)}')
+        users_ = [u for u in users if PARARAM_UNIQUE_NAME_REGEX.fullmatch(u)]
+        if not users_:
+            return {}
+        data = self.__bot.request(f'/core/user?unames={",".join(users_)}')
         return {
             u['unique_name']: u['id']
             for u in data.get('users', [])
