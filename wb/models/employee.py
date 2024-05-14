@@ -19,6 +19,7 @@ from .schedule.schedule import EmployeeSchedule
 
 if TYPE_CHECKING:
     from .employee_pool import EmployeePool
+    from .tm import EmployeeTM
 
 
 VALID_LOGIN = re.compile(r'^[\w.-@_0-9]{2,64}$', re.IGNORECASE)
@@ -328,6 +329,11 @@ class Employee(BaseDBModel):
         sa.ForeignKey('employee_pools.id', name='employee_pool_id_fkey'), nullable=True
     )
     pool: Mapped['EmployeePool | None'] = relationship(lazy='selectin')
+
+    tm: Mapped['EmployeeTM | None'] = relationship(
+        back_populates='employee',
+        lazy='selectin',
+    )
 
     def __repr__(self) -> str:
         return f'<Employee {self.account}>'
