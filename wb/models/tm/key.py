@@ -1,3 +1,4 @@
+import hashlib
 from datetime import datetime
 from typing import TYPE_CHECKING
 
@@ -29,10 +30,14 @@ class EmployeeTM(BaseDBModel):
 
     @staticmethod
     def hash_key(key: str) -> str:
-        return bcrypt.hashpw(key.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        md5_hash = hashlib.md5(key.encode('utf-8')).hexdigest().encode('utf-8')
+        return bcrypt.hashpw(md5_hash, bcrypt.gensalt()).decode('utf-8')
 
     def set_key(self, key: str) -> None:
         self.key_hash = self.hash_key(key)
 
+    def check_key_md5(self, key_md5: str) -> bool:
+        return bcrypt.checkpw(key_md5.encode('utf-8'), self.key_hash.encode('utf-8'))
+
     def check_key(self, key: str) -> bool:
-        return bcrypt.checkpw(key.encode('utf-8'), self.key_hash.encode('utf-8'))
+        return self.check_key_md5(hashlib.md5(key.encode('utf-8')).hexdigest())
