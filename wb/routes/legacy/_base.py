@@ -41,6 +41,6 @@ async def auth_tm_user(body: FormData, session: AsyncSession) -> m.Employee | No
         return None
     if not user.tm:
         return None
-    if not user.tm.check_key(password):
+    if not user.tm.check_key_md5(password):
         return None
     return user
