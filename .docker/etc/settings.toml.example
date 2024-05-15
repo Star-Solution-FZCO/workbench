@@ -17,7 +17,6 @@ S3_ENDPOINT = 'http://minio:9000'
 S3_BUCKET = 'me-bucket'
 S3_REGION = 'us-east-1'
 S3_VERIFY = false
-TM_DB_URI = 'mysql+aiomysql://test:test@oldwbdb:3306/workbench'
 CONFLUENCE_URL='https://wiki.example.com/rest/api'
 CONFLUENCE_API_TOKEN='confluence_api_token'
 CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID='1111111111'

@@ -71,14 +71,3 @@ services:
     volumes:
       - "./data/minio:/data"
     command: server /data --address ":9000" --console-address ":9001"
-  oldwbdb:
-    image: mariadb:5.5.44
-    environment:
-      MYSQL_ROOT_PASSWORD: test
-      MYSQL_DATABASE: workbench
-      MYSQL_USER: test
-      MYSQL_PASSWORD: test
-      TZ: UTC
-    volumes:
-      - ./data/oldwbdb:/var/lib/mysql
-      - ./data/dumps:/dumps
