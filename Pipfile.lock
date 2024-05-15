@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "01326ecd10da845102a83018d7d142d37e7b81d47abe521c77195e8a452f8f97"
+            "sha256": "802f3856f9edf3aa940b40505205f01330b2205fa987fa113e7ca0dbe31f2534"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -143,15 +143,6 @@
             ],
             "markers": "python_version >= '3.6'",
             "version": "==0.11.0"
-        },
-        "aiomysql": {
-            "hashes": [
-                "sha256:558b9c26d580d08b8c5fd1be23c5231ce3aeff2dadad989540fee740253deb67",
-                "sha256:b7c26da0daf23a5ec5e0b133c03d20657276e4eae9b73e040b72787f6f6ade0a"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.7'",
-            "version": "==0.2.0"
         },
         "aiosignal": {
             "hashes": [
@@ -1552,14 +1543,6 @@
             "markers": "python_version >= '3.7'",
             "version": "==2.8.0"
         },
-        "pymysql": {
-            "hashes": [
-                "sha256:4f13a7df8bf36a51e81dd9f3605fede45a4878fe02f9236349fd82a3f0612f96",
-                "sha256:8969ec6d763c856f7073c4c64662882675702efcb114b4bcbb955aea3a069fa7"
-            ],
-            "markers": "python_version >= '3.7'",
-            "version": "==1.1.0"
-        },
         "pyparsing": {
             "hashes": [
                 "sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb",
@@ -1571,11 +1554,11 @@
         },
         "python-datauri": {
             "hashes": [
-                "sha256:17a1dd7eb6c0e84c1e355aba8b6122da3084f1079cb98451def469501bfb1cac",
-                "sha256:fdffca8b7a19f1e2280da7f348f1cb39592b21d1cdc9092fd2440cd5d7d61fd8"
+                "sha256:842614009a2347cd7bf593aff124f371671eff6df06ab14bbdf643f230c2bfd9",
+                "sha256:a952f1dba9103631536b0c01ca946f5a0afecb32e4a4e8ea6029c7f250073389"
             ],
             "index": "pypi",
-            "version": "==2.1.0"
+            "version": "==2.1.1"
         },
         "python-dateutil": {
             "hashes": [
@@ -2673,11 +2656,11 @@
         },
         "platformdirs": {
             "hashes": [
-                "sha256:031cd18d4ec63ec53e82dceaac0417d218a6863f7745dfcc9efe7793b7039bdf",
-                "sha256:17d5a1161b3fd67b390023cb2d3b026bbd40abde6fdb052dfbd3a29c3ba22ee1"
+                "sha256:2d7a1657e36a80ea911db832a8a6ece5ee53d8de21edd5cc5879af6530b1bfee",
+                "sha256:38b7b51f512eed9e84a22788b4bce1de17c0adb134d6becb09836e37d8654cd3"
             ],
             "markers": "python_version >= '3.8'",
-            "version": "==4.2.1"
+            "version": "==4.2.2"
         },
         "plette": {
             "hashes": [
