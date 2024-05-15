@@ -115,7 +115,7 @@ async def correct_employee_tm_logs(
             curr_wb_state = tm_logs[next_wb_act].status
             next_wb_act += 1
         new_opened_state = None
-        if curr_wb_state == 'go':
+        if curr_wb_state == m.TMRecordType.LEAVE:
             await insert_log(
                 employee_id=employee.id,
                 status=m.TMRecordType.COME,
