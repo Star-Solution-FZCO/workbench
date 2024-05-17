@@ -40,8 +40,9 @@ async def query_notifications(
     available_fields = ['subject', 'type', 'read', 'show_on_main_page']
     if curr_user.is_admin:
         available_fields += ['recipient_id']
+    q = orm_query
     if query.filter:
-        q = orm_query.filter(
+        q = q.filter(
             filter_to_query(
                 query.filter, m.Notification, available_fields=available_fields
             )
