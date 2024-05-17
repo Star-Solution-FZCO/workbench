@@ -6,11 +6,16 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee.base_schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
 from wb.services.employee import get_employees
 from wb.utils.current_user import get_current_roles_employee_related
 
-from ._base import BaseReportItem, ListDetailsReport, ListDetailsReportItem
+from ._base import (
+    FULL_EMPLOYEE_FIELDS,
+    BaseReportItem,
+    ListDetailsReport,
+    ListDetailsReportItem,
+)
 
 __all__ = ('generate_due_date_report',)
 
@@ -81,9 +86,10 @@ async def generate_due_date_report(
     }
     results: list[ReportItem] = []
     for emp in employees:
+        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             ListDetailsReportItem(
-                employee=ShortEmployeeOut.from_obj(emp),
+                employee=emp_out_cls.from_obj(emp),
                 items=[
                     ReportItem.from_obj(issue, emp) for issue in employee_issues[emp.id]
                 ],

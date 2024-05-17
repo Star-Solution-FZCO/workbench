@@ -1,19 +1,18 @@
-from collections.abc import Sequence
 from datetime import date
 from typing import Any
 
-import sqlalchemy as sa
 from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import wb.models as m
 from shared_utils.dataclassutils import sum_dataclasses
-from wb.schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
 from wb.services import ActivitySummaryItem, calc_activity_summary
 from wb.services.activity import get_employees_activities_by_day
+from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
 from ._base import (
+    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     DaysSimpleReport,
     DaysSimpleReportDayItem,
@@ -48,10 +47,10 @@ def _report_item_from_obj(obj: ActivitySummaryItem) -> ReportItem:  # type: igno
 async def generate_activity_summary_report(
     flt: Any, start: date, end: date, session: AsyncSession
 ) -> DaysSimpleReport[ReportItem]:  # type: ignore
-    employees_raw = await session.scalars(
-        sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
+    _, employees = await get_employees(
+        employee_filter=flt,
+        session=session,
     )
-    employees: Sequence[m.Employee] = employees_raw.all()
     results: list[DaysSimpleReportItem] = []
     chunk_size = 20 * 365 // ((end - start).days + 1)
     employees_chunks = [
@@ -70,9 +69,10 @@ async def generate_activity_summary_report(
                 day: calc_activity_summary(acts)
                 for day, acts in activities[emp.id].items()
             }
+            emp_out_cls = get_employee_output_model_class(fields=FULL_EMPLOYEE_FIELDS)
             results.append(
                 DaysSimpleReportItem(
-                    employee=ShortEmployeeOut.from_obj(emp),
+                    employee=emp_out_cls.from_obj(emp),
                     days={
                         day: DaysSimpleReportDayItem(
                             item=_report_item_from_obj(summaries[day]),

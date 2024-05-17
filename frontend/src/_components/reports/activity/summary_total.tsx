@@ -46,6 +46,9 @@ const ActivitySummaryTotal: FC<IActivitySummaryTotalProps> = ({ data }) => {
                                 <th key={record.key}>{record.label}</th>
                             ) : null,
                         )}
+                        <th>Vacations</th>
+                        <th>Sick days</th>
+                        <th>Working days</th>
                         <th>Summary</th>
                     </tr>
                 </thead>
@@ -63,6 +66,9 @@ const ActivitySummaryTotal: FC<IActivitySummaryTotalProps> = ({ data }) => {
                                     <td key={nanoid()}>{value}</td>
                                 ) : null,
                             )}
+                            <td>{record.item.vacations}</td>
+                            <td>{record.item.sick_days}</td>
+                            <td>{record.item.working_days}</td>
                             <td>
                                 <IconButton
                                     sx={{ p: 0 }}

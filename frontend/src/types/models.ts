@@ -550,6 +550,9 @@ export type ActivitySummaryDayT = {
     google_drive: string;
     zendesk: string;
     discord_call: string;
+    vacations?: number;
+    sick_days?: number;
+    working_days?: number;
 };
 
 export type ActivitySummaryT = {

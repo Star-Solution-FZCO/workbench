@@ -8,7 +8,7 @@ from pydantic import BaseModel
 
 import wb.models as m
 from wb.routes.v1.report.base import BaseReportItem, ReportItemT
-from wb.schemas import BaseListOutput, ShortEmployeeOut
+from wb.schemas import BaseListOutput, EmployeePublicOutPrototype
 from wb.utils.query import make_list_output
 
 __all__ = (
@@ -25,6 +25,7 @@ __all__ = (
     'ListDetailsReportItem',
     'ListSummaryReport',
     'ListSummaryReportItem',
+    'FULL_EMPLOYEE_FIELDS',
 )
 
 
@@ -33,13 +34,28 @@ SHORT_EMPLOYEE_LABELS = {
     'pararam': 'Pararam',
 }
 
+FULL_EMPLOYEE_FIELDS = (
+    'id',
+    'english_name',
+    'email',
+    'pararam',
+    'cooperation_type',
+    'organization',
+    'position',
+    'work_started',
+    'work_ended',
+    'contract_date',
+    'managers',
+    'team',
+)
 
-def _short_employee_to_values(emp: ShortEmployeeOut) -> list[str]:
+
+def _employee_to_values(emp: EmployeePublicOutPrototype) -> list[str]:
     return [getattr(emp, field) for field in SHORT_EMPLOYEE_LABELS]
 
 
 class SimpleReportItem(BaseModel, t.Generic[ReportItemT]):
-    employee: ShortEmployeeOut
+    employee: t.Any
     item: ReportItemT
 
 
@@ -67,7 +83,7 @@ class SimpleReport(t.Generic[ReportItemT]):
         )
         for item in self.items:
             writer.writerow(
-                _short_employee_to_values(item.employee)
+                _employee_to_values(item.employee)
                 + [str(getattr(item.item, field.name)) for field in fields_metadata]
             )
         return output
@@ -80,7 +96,7 @@ class DaysSimpleReportDayItem(BaseModel, t.Generic[ReportItemT]):
 
 
 class DaysSimpleReportItem(BaseModel, t.Generic[ReportItemT]):
-    employee: ShortEmployeeOut
+    employee: t.Any
     days: dict[date, DaysSimpleReportDayItem[ReportItemT]]
     total: ReportItemT | None
 
@@ -111,7 +127,7 @@ class DaysSimpleReport(t.Generic[ReportItemT]):
         for item in self.items:
             for day, data in item.days.items():
                 writer.writerow(
-                    _short_employee_to_values(item.employee)
+                    _employee_to_values(item.employee)
                     + [day.strftime('%d %b %Y')]
                     + [str(getattr(data.item, field.name)) for field in fields_metadata]
                 )
@@ -124,17 +140,17 @@ class DaysListReportDayItem(BaseModel, t.Generic[ReportItemT]):
 
 
 class DaysListReportItem(BaseModel, t.Generic[ReportItemT]):
-    employee: ShortEmployeeOut
+    employee: t.Any
     days: dict[date, DaysListReportDayItem[ReportItemT]]
 
 
 class ListSummaryReportItem(BaseModel, t.Generic[ReportItemT]):
-    employee: ShortEmployeeOut
+    employee: t.Any
     total: ReportItemT
 
 
 class ListDetailsReportItem(BaseModel, t.Generic[ReportItemT]):
-    employee: ShortEmployeeOut
+    employee: t.Any
     items: list[ReportItemT]
 
 
@@ -165,7 +181,7 @@ class DaysListReport(t.Generic[ReportItemT]):
             for day, data in item.days.items():
                 for list_item in data.items:
                     writer.writerow(
-                        _short_employee_to_values(item.employee)
+                        _employee_to_values(item.employee)
                         + [day.strftime('%d %b %Y')]
                         + [
                             str(getattr(list_item, field.name))
@@ -199,7 +215,7 @@ class ListSummaryReport(t.Generic[ReportItemT]):
         )
         for item in self.items:
             writer.writerow(
-                _short_employee_to_values(item.employee)
+                _employee_to_values(item.employee)
                 + [str(getattr(item.total, field.name)) for field in fields_metadata]
             )
         return output
@@ -230,7 +246,7 @@ class ListDetailsReport(t.Generic[ReportItemT]):
         for item in self.items:
             for data in item.items:
                 writer.writerow(
-                    _short_employee_to_values(item.employee)
+                    _employee_to_values(item.employee)
                     + [str(getattr(data, field.name)) for field in fields_metadata]
                 )
         return output
