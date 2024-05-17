@@ -74,9 +74,26 @@ export const stringToColor = (string: string) => {
 };
 
 export const HHmmUTCtoTZ = (timeString: string, timezone: string) => {
-    const utcDatetime = `1/1/1970 ${timeString} GMT`;
-    const zonedTime = toZonedTime(new Date(utcDatetime), timezone);
-    return format(zonedTime, "HH:mm");
+    const currentDate = new Date();
+
+    const [hours, minutes] = timeString.split(":");
+
+    const utcDate = new Date(
+        Date.UTC(
+            currentDate.getUTCFullYear(),
+            currentDate.getUTCMonth(),
+            currentDate.getUTCDate(),
+            parseInt(hours, 10),
+            parseInt(minutes, 10),
+        ),
+    );
+
+    const zonedDate = toZonedTime(utcDate, timezone);
+    const zonedTimeString = formatWithTZ(zonedDate, "HH:mm", {
+        timeZone: timezone,
+    });
+
+    return zonedTimeString;
 };
 
 export const parseConfluenceHighlight = (text: string) => {
