@@ -1,18 +1,18 @@
 from datetime import date
 from typing import Any
 
-import sqlalchemy as sa
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
 from shared_utils.dateutils import format_timedelta, sum_timedelta
-from wb.schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
 from wb.services import get_employees_days_activity_status
+from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 from wb.services.tm import calc_presence
 
-from ._base import BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_presence_summary_report',)
 
@@ -39,10 +39,10 @@ async def generate_presence_summary_report(
     session: AsyncSession,
 ) -> SimpleReport[ReportItem]:
     # pylint: disable=too-many-locals
-    employees_raw = await session.scalars(
-        sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
+    _, employees = await get_employees(
+        employee_filter=flt,
+        session=session,
     )
-    employees: list[m.Employee] = list(employees_raw.all())
     presence = await calc_presence(employees, start, end, session=session)
     days_status = await get_employees_days_status(
         employees,
@@ -58,9 +58,10 @@ async def generate_presence_summary_report(
     )
     results: list[SimpleReportItem[ReportItem]] = []
     for emp, user_presence in zip(employees, presence):
+        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=ShortEmployeeOut.from_obj(emp),
+                employee=emp_out_cls.from_obj(emp),
                 item=ReportItem(
                     total=format_timedelta(
                         sum_timedelta([data.total for data in user_presence.values()])

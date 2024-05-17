@@ -1,15 +1,16 @@
 from datetime import date, timedelta
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List
 
 import sqlalchemy as sa
 from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
 from wb.services import ActivitySummaryItem, calc_activity_summary
+from wb.services.employee import get_employees
 
-from ._base import BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_activity_total_by_range_report',)
 
@@ -42,10 +43,10 @@ async def generate_activity_total_by_range_report(
     end: date,
     session: AsyncSession,
 ) -> SimpleReport[ReportItem]:  # type: ignore
-    employees_raw = await session.scalars(
-        sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
+    _, employees = await get_employees(
+        employee_filter=flt,
+        session=session,
     )
-    employees: Sequence[m.Employee] = employees_raw.all()
     employee_ids = [emp.id for emp in employees]
     flt = sa.and_(
         m.Activity.employee_id.in_(employee_ids),
@@ -59,9 +60,10 @@ async def generate_activity_total_by_range_report(
         activities[res.employee_id].append(res)
     results: list[SimpleReportItem] = []
     for emp in employees:
+        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=ShortEmployeeOut.from_obj(emp),
+                employee=emp_out_cls.from_obj(emp),
                 item=_report_item_from_obj(calc_activity_summary(activities[emp.id])),
             )
         )

@@ -1,15 +1,13 @@
-from collections.abc import Sequence
 from typing import Any
 
-import sqlalchemy as sa
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-import wb.models as m
-from wb.schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
 from wb.services import calc_employee_vacation_days
+from wb.services.employee import get_employees
 
-from ._base import BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_free_days_report',)
 
@@ -31,16 +29,17 @@ class ReportItem(BaseReportItem):
 async def generate_free_days_report(
     flt: Any, session: AsyncSession
 ) -> SimpleReport[ReportItem]:
-    employees_raw = await session.scalars(
-        sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
+    _, employees = await get_employees(
+        employee_filter=flt,
+        session=session,
     )
-    employees: Sequence[m.Employee] = employees_raw.all()
     results: list[SimpleReportItem] = []
     for emp in employees:
         res = await calc_employee_vacation_days(emp, session=session)
+        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=ShortEmployeeOut.from_obj(emp),
+                employee=emp_out_cls.from_obj(emp),
                 item=ReportItem(
                     total_vacation_days_year_end=res.total_vacation_year_end,
                     total_vacation_days_current=res.total_vacation_days_current,

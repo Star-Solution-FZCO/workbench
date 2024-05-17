@@ -199,7 +199,8 @@ async def get_presence_report(
 ) -> BaseListOutput:
     flt = _get_employee_filter(query.filter)
     report = await generate_presence_report(flt, start, end, session=session)
-    return report.make_list_output()
+    aa = report.make_list_output()
+    return aa
 
 
 @router.get('/presence/csv')

@@ -6,9 +6,11 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas import ShortEmployeeOut
+from wb.schemas.employee import get_employee_output_model_class
+from wb.services.employee import get_employees
 
 from ._base import (
+    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     ListDetailsReport,
     ListDetailsReportItem,
@@ -45,10 +47,11 @@ async def generate_day_off_report(
     session: AsyncSession,
     exclusion_types_filter: t.List[m.DayType] | None = None,
 ):
-    employees_raw = await session.scalars(
-        sa.select(m.Employee).filter(flt).order_by(m.Employee.english_name)
+    _, employees_raw = await get_employees(
+        employee_filter=flt,
+        session=session,
     )
-    employees: t.Dict[int, m.Employee] = {emp.id: emp for emp in employees_raw.all()}
+    employees: dict[int, m.Employee] = {emp.id: emp for emp in employees_raw}
     employee_ids = list(employees.keys())
     q_guid = (
         sa.select(
@@ -119,14 +122,19 @@ async def generate_day_off_details_report(  # pylint: disable=too-many-locals
         session=session,
         exclusion_types_filter=exclusion_types_filter,
     )
-    return ListDetailsReport(
-        items=[
+    items = []
+    for emp_id, data in results.items():
+        emp_out_cls = get_employee_output_model_class(
+            employees[emp_id], fields=FULL_EMPLOYEE_FIELDS
+        )
+        items.append(
             ListDetailsReportItem(
-                employee=ShortEmployeeOut.from_obj(employees[emp_id]),
+                employee=emp_out_cls.from_obj(employees[emp_id]),
                 items=data,
             )
-            for emp_id, data in results.items()
-        ],
+        )
+    return ListDetailsReport(
+        items=items,
         item_type=ReportDetailsItem,
     )
 
@@ -151,10 +159,14 @@ async def generate_day_off_summary_report(  # pylint: disable=too-many-locals
         for item in data:
             total[item.type] += item.days
         total_by_employee[emp_id] = total
-    return ListSummaryReport(
-        items=[
+    items = []
+    for emp_id, _ in results.items():
+        emp_out_cls = get_employee_output_model_class(
+            employees[emp_id], fields=FULL_EMPLOYEE_FIELDS
+        )
+        items.append(
             ListSummaryReportItem(
-                employee=ShortEmployeeOut.from_obj(employees[emp_id]),
+                employee=emp_out_cls.from_obj(employees[emp_id]),
                 total=ReportSummaryItem(
                     vacation=total_by_employee[emp_id].get(m.DayType.VACATION, 0),
                     sick_day=total_by_employee[emp_id].get(m.DayType.SICK_DAY, 0),
@@ -166,7 +178,8 @@ async def generate_day_off_summary_report(  # pylint: disable=too-many-locals
                     ),
                 ),
             )
-            for emp_id, _ in results.items()
-        ],
+        )
+    return ListSummaryReport(
+        items=items,
         item_type=ReportSummaryItem,
     )
