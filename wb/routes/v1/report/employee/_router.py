@@ -50,6 +50,7 @@ REPORT_TYPES: Dict[str, str] = {
     'day-off-details-report': 'Day off details report',
     'calendar-report': 'Calendar report',
     'due-date-report': 'Due date report',
+    'done-tasks-summary-total-report': 'Done tasks summary total',
 }
 
 REPORT_FORMATS = (
@@ -346,7 +347,7 @@ async def get_due_date_report_csv(
     return StreamingResponse(iter([output.getvalue()]), media_type='text/csv')
 
 
-@router.get('/done-tasks-report')
+@router.get('/done-tasks-summary-total-report')
 async def get_done_tasks_report(
     start: date,
     end: date,
@@ -358,7 +359,7 @@ async def get_done_tasks_report(
     return report.make_list_output()
 
 
-@router.get('/done-tasks-report/csv')
+@router.get('/done-tasks-summary-total-report/csv')
 async def get_done_tasks_report_csv(
     start: date,
     end: date,
