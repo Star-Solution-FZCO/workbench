@@ -330,7 +330,7 @@ class GerritPresenceConnector(Connector):
         start_ = datetime.utcfromtimestamp(start)
         end_ = datetime.utcfromtimestamp(end)
         res = await self.__rest.get_changes_list(
-            f'/changes/?q=after:"{start_.strftime("%Y-%m-%d %H:%M:%S")}"&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
+            f'/changes/?q=after:"{start_.strftime("%Y-%m-%d %H:%M:%S")}" branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
         )
         results = {}
 
