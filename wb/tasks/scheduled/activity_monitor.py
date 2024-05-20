@@ -72,27 +72,30 @@ async def check_major_activity(
     end: date,
     warning: float,
     session: 'AsyncSession',
-) -> tuple[set[int], set[int]]:
+) -> tuple[set[int], set[int], dict[int, int]]:
     activities = await get_employees_activities(employees, start, end, session=session)
     summaries = {emp.id: calc_activity_summary(activities[emp.id]) for emp in employees}
     days = await get_employees_days_status(employees, start, end, session=session)
+    working_days = {
+        emp.id: len([d for d in days[emp.id].values() if _is_working_day(d)])
+        for emp in employees
+    }
     results: tuple[set[int], set[int]] = (set(), set())
     for emp in employees:
-        working_days = len([d for d in days[emp.id].values() if _is_working_day(d)])
         total_planned = len([d for d in days[emp.id].values() if _is_planned_day(d)])
         if (
             total_planned < 2
-            or working_days == 0
-            or working_days / total_planned < SKIP_WORKING_DAYS_PART
+            or working_days[emp.id] == 0
+            or working_days[emp.id] / total_planned < SKIP_WORKING_DAYS_PART
         ):
             continue
         task_count = _count_done_tasks(summaries[emp.id])
         if task_count == 0:
             results[1].add(emp.id)
             continue
-        if task_count / working_days < warning:
+        if task_count / working_days[emp.id] < warning:
             results[0].add(emp.id)
-    return results
+    return results[0], results[1], working_days
 
 
 async def monitor_managers() -> None:
@@ -112,7 +115,7 @@ async def monitor_managers() -> None:
         )
         employees = {emp.id: emp for emp in employees_raw.all()}
 
-        warn_emp, crit_emp = await check_major_activity(
+        warn_emp, crit_emp, work_days_cnt = await check_major_activity(
             list(employees.values()), start, end, TASK_PER_DAY_WARNING_MANAGERS, session
         )
         notifications: dict[int, tuple[set[int], set[int]]] = {}
@@ -141,13 +144,15 @@ async def monitor_managers() -> None:
                 text_lines.append(
                     f"CRITICAL: {employees[crit_notify].link_pararam} don't have any major activity "
                     f'from {max((start, employees[crit_notify].work_started))} to {end} '
-                    f'([details]({_link_to_summary_report(employees[crit_notify], start, end)}))'
+                    f'({work_days_cnt[crit_notify]} working days) '
+                    f'[details]({_link_to_summary_report(employees[crit_notify], start, end)})'
                 )
             for warn_notify in notifications[recipient.id][1]:
                 text_lines.append(
                     f'WARNING: {employees[warn_notify].link_pararam} have fewer than 5 major activity '
                     f'from {max((start, employees[warn_notify].work_started))} to {end} '
-                    f'([details]({_link_to_summary_report(employees[warn_notify], start, end)}))'
+                    f'({work_days_cnt[warn_notify]} working days) '
+                    f'[details]({_link_to_summary_report(employees[warn_notify], start, end)})'
                 )
             task_send_bbot_message.delay(recipient.pararam, '\n'.join(text_lines))
 
@@ -171,7 +176,7 @@ async def monitor_weekly_hr() -> None:
         )
         employees = {emp.id: emp for emp in employees_raw.all()}
 
-        warn_emp, _ = await check_major_activity(
+        warn_emp, _, work_days_cnt = await check_major_activity(
             list(employees.values()), start, end, TASK_PER_DAY_WARNING_HR, session
         )
 
@@ -180,7 +185,8 @@ async def monitor_weekly_hr() -> None:
             text_lines.append(
                 f'WARNING: {employees[emp_id].link_pararam} have fewer than 5 major activity '
                 f'from {max((start, employees[emp_id].work_started))} to {end} '
-                f'([details]({_link_to_summary_report(employees[emp_id], start, end)}))         s'
+                f'({work_days_cnt[emp_id]} working days) '
+                f'[details]({_link_to_summary_report(employees[emp_id], start, end)})'
             )
 
         for recipient in recipients:
