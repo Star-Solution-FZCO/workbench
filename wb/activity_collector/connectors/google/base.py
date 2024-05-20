@@ -9,7 +9,7 @@ from aiogoogle.auth.creds import ServiceAccountCreds
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from ..base import Connector
+from ..base import Connector, DoneTask
 
 __all__ = ('GoogleReportConnector',)
 
@@ -156,3 +156,8 @@ class GoogleReportConnector(Connector, ABC):
 
     async def get_users(self, employees: Sequence[m.Employee]) -> Dict[int, str]:
         return {emp.id: emp.email for emp in employees}
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        return {}

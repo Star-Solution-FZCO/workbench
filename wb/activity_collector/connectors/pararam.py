@@ -8,7 +8,7 @@ from pararamio import ActivityAction, PararamioBot
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('PararamConnector',)
 
@@ -119,3 +119,8 @@ class PararamConnector(Connector):
                 }
             )
         return results
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        return {}

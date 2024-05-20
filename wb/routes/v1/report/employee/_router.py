@@ -26,6 +26,7 @@ from .activity_details import generate_activity_details_report
 from .activity_summary import generate_activity_summary_report
 from .activity_total_by_range import generate_activity_total_by_range_report
 from .day_off import generate_day_off_details_report, generate_day_off_summary_report
+from .done_tasks_report import generate_done_tasks_report
 from .due_date import generate_due_date_report
 from .free_vacation_days import generate_free_days_report
 from .presence import generate_presence_report
@@ -343,6 +344,18 @@ async def get_due_date_report_csv(
     report = await generate_due_date_report(flt, start, end, session=session)
     output = report.make_csv()
     return StreamingResponse(iter([output.getvalue()]), media_type='text/csv')
+
+
+@router.get('/done-tasks-report')
+async def get_done_tasks_report(
+    start: date,
+    end: date,
+    query: ListFilterParams = Depends(ListFilterParams),
+    session: AsyncSession = Depends(get_db_session),
+) -> BaseListOutput:
+    flt = _get_employee_filter(query.filter)
+    report = await generate_done_tasks_report(flt, start, end, session=session)
+    return report.make_list_output()
 
 
 @router.get('/issues-settings')

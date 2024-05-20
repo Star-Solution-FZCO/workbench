@@ -7,7 +7,7 @@ import aiohttp
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('CVSConnector',)
 
@@ -63,3 +63,8 @@ class CVSConnector(Connector):
 
     async def get_users(self, employees: Sequence[m.Employee]) -> Dict[int, str]:
         return {emp.id: emp.account for emp in employees}
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        return {}
