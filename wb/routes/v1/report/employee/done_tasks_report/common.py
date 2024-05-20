@@ -49,6 +49,7 @@ async def get_stats(
     end: date,
     session: AsyncSession,
 ) -> dict[int, dict[date, tuple[GerritStats, YTStats]]]:
+    # pylint: disable=too-many-locals
     sources_raw = await session.scalars(
         sa.select(m.ActivitySource).where(
             m.ActivitySource.active.is_(True),
