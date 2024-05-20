@@ -1367,3 +1367,16 @@ export type DoneTasksSummaryTotalT = {
     employee: UserInfoT;
     item: DoneTasksSummaryItemT;
 };
+
+export type DoneTasksSummaryT = {
+    employee: UserInfoT;
+    days: Record<
+        string,
+        {
+            day_status: DayT;
+            has_activity: boolean;
+            item: DoneTasksSummaryItemT;
+        }
+    >;
+    total: DoneTasksSummaryItemT;
+};

@@ -51,6 +51,7 @@ REPORT_TYPES: Dict[str, str] = {
     'day-off-details-report': 'Day off details report',
     'calendar-report': 'Calendar report',
     'due-date-report': 'Due date report',
+    'done-tasks-summary-report': 'Done tasks summary',
     'done-tasks-summary-total-report': 'Done tasks summary total',
 }
 

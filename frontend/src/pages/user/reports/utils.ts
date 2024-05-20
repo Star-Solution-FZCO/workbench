@@ -9,6 +9,7 @@ export const reportPathMap = {
     "day-off-details-report": "day-off-details",
     "calendar-report": "calendar",
     "due-date-report": "due-date",
+    "done-tasks-summary-report": "done-tasks-summary",
     "done-tasks-summary-total-report": "done-tasks-summary-total",
 };
 

@@ -112,6 +112,11 @@ const ReportControls: FC<IReportControlsProps> = memo(
             reportsApi.useLazyGetDueDateReportCSVQuery();
 
         const [
+            getDoneTasksSummaryReportCSV,
+            getDoneTasksSummaryReportCSVProps,
+        ] = reportsApi.useLazyGetDoneTasksSummaryReportCSVQuery();
+
+        const [
             getDoneTasksSummaryTotalReportCSV,
             getDoneTasksSummaryTotalReportCSVProps,
         ] = reportsApi.useLazyGetDoneTasksSummaryTotalReportCSVQuery();
@@ -145,6 +150,7 @@ const ReportControls: FC<IReportControlsProps> = memo(
                 "day-off-details-report": getDayOffDetailsReportCSV,
                 "calendar-report": undefined,
                 "due-date-report": getDueDateReportCSV,
+                "done-tasks-summary-report": getDoneTasksSummaryReportCSV,
                 "done-tasks-summary-total-report":
                     getDoneTasksSummaryTotalReportCSV,
             };
@@ -200,6 +206,7 @@ const ReportControls: FC<IReportControlsProps> = memo(
             getDayOffSummaryReportCSVProps.isLoading ||
             getDayOffDetailsReportCSVProps.isLoading ||
             getDueDateReportCSVProps.isLoading ||
+            getDoneTasksSummaryReportCSVProps.isLoading ||
             getDoneTasksSummaryTotalReportCSVProps.isLoading;
 
         useEffect(() => {
