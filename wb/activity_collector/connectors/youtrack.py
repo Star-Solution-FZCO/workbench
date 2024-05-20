@@ -1,15 +1,15 @@
-import datetime
 import json
 import logging
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Union
-from urllib.parse import urljoin
+from urllib.parse import quote, urljoin
 
 import aiohttp
 
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('YoutrackConnector',)
 
@@ -129,7 +129,7 @@ class YoutrackConnector(Connector):
                         employee_id=employee_id,
                         source_id=self.source.id,
                         action='CREATED',
-                        time=datetime.datetime.utcfromtimestamp(
+                        time=datetime.utcfromtimestamp(
                             int(issue_activity.timestamp / 1000)
                         ),
                         target_id=issue_activity.obj_id,
@@ -152,7 +152,7 @@ class YoutrackConnector(Connector):
                         employee_id=employee_id,
                         source_id=self.source.id,
                         action=issue_activity.added[0]['name'].upper(),
-                        time=datetime.datetime.utcfromtimestamp(
+                        time=datetime.utcfromtimestamp(
                             int(issue_activity.timestamp / 1000)
                         ),
                         target_id=issue_activity.obj_id,
@@ -175,7 +175,7 @@ class YoutrackConnector(Connector):
                         employee_id=employee_id,
                         source_id=self.source.id,
                         action=issue_activity.added[0]['name'].upper(),
-                        time=datetime.datetime.utcfromtimestamp(
+                        time=datetime.utcfromtimestamp(
                             int(issue_activity.timestamp / 1000)
                         ),
                         target_id=issue_activity.obj_id,
@@ -190,7 +190,7 @@ class YoutrackConnector(Connector):
                         employee_id=employee_id,
                         source_id=self.source.id,
                         action='ADD COMMENT',
-                        time=datetime.datetime.utcfromtimestamp(
+                        time=datetime.utcfromtimestamp(
                             int(issue_activity.timestamp / 1000)
                         ),
                         target_id=issue_activity.issue,
@@ -214,3 +214,50 @@ class YoutrackConnector(Connector):
             for u in response
             if u['email'] in employees_ids_by_email
         }
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        start_ = datetime.utcfromtimestamp(start)
+        end_ = datetime.utcfromtimestamp(end)
+        query = f'resolved date: {{{start_.strftime("%Y-%m-%dT%H:%M:%S")}}} .. {{{end_.strftime("%Y-%m-%dT%H:%M:%S")}}}'
+        url = (
+            '/api/issues?fields=idReadable,resolved,'
+            'customFields(name,value(login))'
+            '&customFields=assignee'
+            f'&query={quote(query)}'
+        )
+
+        results: dict[int, list[DoneTask]] = {}
+
+        def _add_done_task(assignee_login: str | None, task_: DoneTask) -> None:
+            if not assignee_login:
+                return
+            if not (emp_id := aliases.get(assignee_login)):
+                return
+            task_.employee_id = emp_id
+            if task_.employee_id not in results:
+                results[task_.employee_id] = []
+            results[task_.employee_id].append(task_)
+
+        async for r in get_objects(url, self.__token, self.__url):
+            custom_fields = _parse_custom_fields(r.get('customFields', []))
+            if not (assignee_value := custom_fields.get('Assignee', {}).get('value')):
+                continue
+            _add_done_task(
+                assignee_value.get('login'),
+                DoneTask(
+                    employee_id=0,
+                    source_id=self.source.id,
+                    time=datetime.utcfromtimestamp(r['resolved'] / 1000),
+                    task_id=r['idReadable'],
+                    task_type='RESOLVED_ISSUE',
+                    task_name=r.get('summary'),
+                    task_link=f'{self.__url}/issue/{r["idReadable"]}',
+                ),
+            )
+        return results
+
+
+def _parse_custom_fields(custom_fields: list[dict]) -> dict:
+    return {cf['name']: cf for cf in custom_fields}

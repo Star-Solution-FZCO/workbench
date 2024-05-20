@@ -11,7 +11,7 @@ import jwt
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('DiscordConnector',)
 
@@ -144,3 +144,8 @@ class DiscordConnector(Connector):
             employees_ids_by_email[u]: u
             for u in response.intersection(set(employees_ids_by_email.keys()))
         }
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        return {}

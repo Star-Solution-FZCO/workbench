@@ -11,7 +11,7 @@ import aiohttp
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('ZendeskConnector',)
 
@@ -159,3 +159,8 @@ class ZendeskConnector(Connector):
             for u in response
             if u['email'] in employees_ids
         }
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        return {}

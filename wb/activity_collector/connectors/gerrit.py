@@ -1,7 +1,7 @@
-import datetime
 import json
 import logging
 import re
+from datetime import datetime
 from typing import Any, Dict, List, Sequence
 from urllib.parse import urljoin
 
@@ -10,13 +10,14 @@ import aiohttp
 import wb.models as m
 from wb.models.activity import Activity, ActivitySource
 
-from .base import Connector
+from .base import Connector, DoneTask
 
 __all__ = ('GerritPresenceConnector',)
 
 
 GERRIT_MAGIC_JSON_PREFIX = b")]}'\n"
 GERRIT_AUTH_SUFFIX = '/a'
+COMMENTS_PATTERN = re.compile(r'^\((\d+) comments?\)$')
 
 
 def _fill_change_meta(change: dict) -> dict:
@@ -97,19 +98,53 @@ class GerritRestAPI:
         return await self._get_list_response(endpoint, more_field='_more_accounts')
 
 
-def in_range(start: float, end: float, compare_time: datetime.datetime) -> bool:
+def in_range(start: float, end: float, compare_time: datetime) -> bool:
     return (
-        datetime.datetime.utcfromtimestamp(start)
+        datetime.utcfromtimestamp(start)
         <= compare_time
-        <= datetime.datetime.utcfromtimestamp(end)
+        <= datetime.utcfromtimestamp(end)
     )
 
 
-def time_converter(time_str: str) -> datetime.datetime:
-    utc_ts = datetime.datetime.strptime(
+def time_converter(time_str: str) -> datetime:
+    utc_ts = datetime.strptime(
         f'{time_str.split(".")[0]} +0000', '%Y-%m-%d %H:%M:%S %z'
     ).timestamp()
-    return datetime.datetime.utcfromtimestamp(utc_ts)
+    return datetime.utcfromtimestamp(utc_ts)
+
+
+def _parse_messages_comments(msgs: list[dict]) -> dict[int, list[datetime, int, int]]:
+    results = {}
+    for msg in msgs:
+        author = msg.get('author', {}).get('_account_id')
+        if not author:
+            continue
+        if author not in results:
+            results[author] = []
+        comment_parts = filter(
+            bool,
+            map(COMMENTS_PATTERN.fullmatch, msg.get('message', '').split('\n\n')),
+        )
+        for p in comment_parts:
+            results[author].append(
+                (
+                    datetime.fromisoformat(msg['date']),
+                    int(p.groups()[0]),
+                    msg['_revision_number'],
+                )
+            )
+    return results
+
+
+def _parse_revisions(revs: dict[str, dict]) -> dict[int, tuple[datetime, int, bool]]:
+    results = {}
+    for rev in revs.values():
+        results[rev['_number']] = (
+            datetime.fromisoformat(rev['created']),
+            rev['uploader']['_account_id'],
+            'SERVICE_USER' in rev['uploader'].get('tags', []),
+        )
+    return results
 
 
 class GerritPresenceConnector(Connector):
@@ -142,7 +177,7 @@ class GerritPresenceConnector(Connector):
         results: List[Activity] = []
         try:
             changes = await self.__rest.get_changes_list(
-                f'/changes/?q=after:"{datetime.datetime.utcfromtimestamp(start).strftime("%Y-%m-%d %H:%M:%S")}"'
+                f'/changes/?q=after:"{datetime.utcfromtimestamp(start).strftime("%Y-%m-%d %H:%M:%S")}"'
                 f'&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
             )
         except Exception:  # pylint: disable=broad-exception-caught
@@ -286,4 +321,75 @@ class GerritPresenceConnector(Connector):
             if (g_account := rec.get('username')) and g_account in employees_ids_by_acc:
                 results[employees_ids_by_acc[g_account]] = str(g_id)
                 continue
+        return results
+
+    async def get_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> dict[int, list[DoneTask]]:
+        # pylint: disable=too-many-locals
+        start_ = datetime.utcfromtimestamp(start)
+        end_ = datetime.utcfromtimestamp(end)
+        res = await self.__rest.get_changes_list(
+            f'/changes/?q=after:"{start_.strftime("%Y-%m-%d %H:%M:%S")}"&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
+        )
+        results = {}
+
+        def _add_done_task(author_id_: int, task_: DoneTask) -> None:
+            if not (emp_id := aliases.get(str(author_id_))):
+                return
+            task_.employee_id = emp_id
+            if task_.employee_id not in results:
+                results[task_.employee_id] = []
+            results[task_.employee_id].append(task_)
+
+        for r in res:
+            parsed_comments = _parse_messages_comments(r.get('messages', []))
+            parsed_revisions = _parse_revisions(r.get('revisions', {}))
+            not_self_comments = {}
+            for author_id, comments in parsed_comments.items():
+                for comment in comments:
+                    if (
+                        author_id != parsed_revisions[comment[2]][1]
+                        and comment[0] >= start_
+                        and comment[0] < end_
+                    ):
+                        if author_id not in not_self_comments:
+                            not_self_comments[author_id] = []
+                        not_self_comments[author_id].append(comment)
+            last_revision = max(
+                [rev for rev, pr in parsed_revisions.items() if not pr[2]] or [0]
+            )
+            if (
+                r['status'] == 'MERGED'
+                and last_revision
+                and parsed_revisions[last_revision][0] >= start_
+                and parsed_revisions[last_revision][0] < end_
+            ):
+                _add_done_task(
+                    parsed_revisions[last_revision][1],
+                    DoneTask(
+                        employee_id=0,
+                        source_id=self.source.id,
+                        time=parsed_revisions[last_revision][0],
+                        task_id=r['id'],
+                        task_type='MERGED_COMMIT',
+                        task_name=r['subject'],
+                        task_link=f'{self.__url}/#/q/{r["id"].split("~")[-1]}',
+                    ),
+                )
+            for author_id, comments in not_self_comments.items():
+                for c in comments:
+                    for _ in range(c[1]):
+                        _add_done_task(
+                            author_id,
+                            DoneTask(
+                                employee_id=0,
+                                source_id=self.source.id,
+                                time=c[0],
+                                task_id=r['id'],
+                                task_type='COMMENT',
+                                task_name=r['subject'],
+                                task_link=f'{self.__url}/#/q/{r["id"].split("~")[-1]}',
+                            ),
+                        )
         return results

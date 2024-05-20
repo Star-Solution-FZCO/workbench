@@ -1353,3 +1353,30 @@ export type CredentialsTypeT =
     | "certificate"
     | "pvpn"
     | "openvpn";
+
+export type DoneTasksSummaryItemT = {
+    issues: number;
+    commits: number;
+    comments: number;
+    vacations: number;
+    sick_days: number;
+    working_days: number;
+};
+
+export type DoneTasksSummaryTotalT = {
+    employee: UserInfoT;
+    item: DoneTasksSummaryItemT;
+};
+
+export type DoneTasksSummaryT = {
+    employee: UserInfoT;
+    days: Record<
+        string,
+        {
+            day_status: DayT;
+            has_activity: boolean;
+            item: DoneTasksSummaryItemT;
+        }
+    >;
+    total: DoneTasksSummaryItemT;
+};

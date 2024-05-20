@@ -66,6 +66,8 @@ export const reportTypes = [
     "day-off-details-report",
     "calendar-report",
     "due-date-report",
+    "done-tasks-summary-report",
+    "done-tasks-summary-total-report",
 ] as const;
 
 export const activityReportColumns = [
