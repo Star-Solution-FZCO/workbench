@@ -358,6 +358,19 @@ async def get_done_tasks_report(
     return report.make_list_output()
 
 
+@router.get('/done-tasks-report/csv')
+async def get_done_tasks_report_csv(
+    start: date,
+    end: date,
+    query: ListFilterParams = Depends(ListFilterParams),
+    session: AsyncSession = Depends(get_db_session),
+) -> StreamingResponse:
+    flt = _get_employee_filter(query.filter)
+    report = await generate_done_tasks_report(flt, start, end, session=session)
+    output = report.make_csv()
+    return StreamingResponse(iter([output.getvalue()]), media_type='text/csv')
+
+
 @router.get('/issues-settings')
 async def get_issues_settings(
     session: AsyncSession = Depends(get_db_session),
