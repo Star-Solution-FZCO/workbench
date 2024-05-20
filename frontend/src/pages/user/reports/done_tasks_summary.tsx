@@ -8,7 +8,7 @@ const DoneTasksSummaryReport = () => {
 
     return (
         <ReportWrapper
-            reportType="activity-summary-report"
+            reportType="done-tasks-summary-report"
             queryFn={getDoneTasksSummaryReport}
             isLoading={isLoading}
             isFetching={isFetching}
