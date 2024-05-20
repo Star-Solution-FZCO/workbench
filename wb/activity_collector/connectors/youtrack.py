@@ -235,6 +235,8 @@ class YoutrackConnector(Connector):
                 return
             if not (emp_id := aliases.get(assignee_login)):
                 return
+            if task_.time < start_ or task_.time >= end_:
+                return
             task_.employee_id = emp_id
             if task_.employee_id not in results:
                 results[task_.employee_id] = []
