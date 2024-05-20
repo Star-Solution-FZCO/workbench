@@ -6,6 +6,7 @@ import ActivitySummaryTotalReport from "./activity_summary_total";
 import CalendarReport from "./calendar";
 import DayOffDetails from "./day_off_details";
 import DayOffSummary from "./day_off_summary";
+import DoneTasksSummaryTotalReport from "./done_tasks_summary_total";
 import DueDateReport from "./due_date";
 import ReportMain from "./main";
 import PresenceDetailsReport from "./presence_details";
@@ -46,6 +47,10 @@ const Reports = () => {
                 <Route path="day-off-details" element={<DayOffDetails />} />
                 <Route path="calendar" element={<CalendarReport />} />
                 <Route path="due-date" element={<DueDateReport />} />
+                <Route
+                    path="done-tasks-summary-total"
+                    element={<DoneTasksSummaryTotalReport />}
+                />
                 <Route index element={<ReportMain />} />
             </Routes>
         </>

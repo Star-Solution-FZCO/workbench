@@ -9,6 +9,7 @@ import {
     CustomBaseQueryFn,
     DayOffDetailsReportItemT,
     DayOffSummaryReportItemT,
+    DoneTasksSummaryTotalT,
     DueDateReportItemT,
     EmployeeActivitySourceAliasT,
     EmployeeActivityT,
@@ -173,6 +174,44 @@ export const reportsApi = createApi({
                             await saveFile(
                                 blob,
                                 "activity-summary-total-report.csv",
+                            );
+                        });
+                        return {};
+                    }
+                    const data = await response.json();
+
+                    return {
+                        status: response.status,
+                        ...data,
+                    };
+                },
+                cache: "no-cache",
+                params,
+            }),
+        }),
+        getDoneTasksSummaryTotalReport: build.query<
+            ApiResponse<ListResponseT<DoneTasksSummaryTotalT>>,
+            { start: string; end: string } & ListRequestParamsT
+        >({
+            query: ({ ...params }) => ({
+                url: `${apiVersion}/report/employee/done-tasks-summary-total-report`,
+                method: "GET",
+                params,
+            }),
+        }),
+        getDoneTasksSummaryTotalReportCSV: build.query<
+            unknown,
+            ListRequestParamsT
+        >({
+            query: ({ ...params }) => ({
+                url: `${apiVersion}/report/employee/done-tasks-summary-total-report/csv`,
+                method: "GET",
+                responseHandler: async (response) => {
+                    if (response.ok) {
+                        response.blob().then(async (blob) => {
+                            await saveFile(
+                                blob,
+                                "done-tasks-summary-total-report.csv",
                             );
                         });
                         return {};
