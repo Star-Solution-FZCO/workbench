@@ -24,13 +24,17 @@ lint-frontend:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
-.template-login-registry: &template-login-registry
-  before_script:
-    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+.template-login-internal-registry: &template-login-internal-registry
+  - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
+
+.template-login-global-registry: &template-login-global-registry
+  - echo "$DOCKERHUB_TOKEN" | docker login -u $DOCKERHUB_USER --password-stdin
+
 
 build-dev-backend:
   stage: build
-  <<: *template-login-registry
+  before_script:
+    - *template-login-internal-registry
   script:
     - docker build -t $CI_REGISTRY_IMAGE/backend:dev --build-arg version=$CI_COMMIT_SHORT_SHA --target prod -f Dockerfile .
     - docker push $CI_REGISTRY_IMAGE/backend:dev
@@ -39,7 +43,8 @@ build-dev-backend:
 
 build-dev-frontend:
   stage: build
-  <<: *template-login-registry
+  before_script:
+    - *template-login-internal-registry
   script:
     - docker build -t $CI_REGISTRY_IMAGE/frontend:dev --build-arg version=$CI_COMMIT_SHORT_SHA -f Dockerfile_frontend .
     - docker push $CI_REGISTRY_IMAGE/frontend:dev
@@ -48,22 +53,34 @@ build-dev-frontend:
 
 build-release-backend:
   stage: build
-  <<: *template-login-registry
+  before_script:
+    - *template-login-internal-registry
+    - *template-login-global-registry
   script:
     - docker build -t $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG --build-arg version=$CI_COMMIT_TAG --target prod -f Dockerfile .
     - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG $CI_REGISTRY_IMAGE/backend:latest
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG $DOCKERHUB_IMAGE_PREFIX-backend:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG $DOCKERHUB_IMAGE_PREFIX-backend:latest
     - docker push $CI_REGISTRY_IMAGE/backend:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE/backend:latest
+    - docker push $DOCKERHUB_IMAGE_PREFIX-backend:$CI_COMMIT_TAG
+    - docker push $DOCKERHUB_IMAGE_PREFIX-backend:latest
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
 
 build-release-frontend:
   stage: build
-  <<: *template-login-registry
+  before_script:
+    - *template-login-internal-registry
+    - *template-login-global-registry
   script:
     - docker build -t $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG --build-arg version=$CI_COMMIT_TAG -f Dockerfile_frontend .
     - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG $CI_REGISTRY_IMAGE/frontend:latest
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG $DOCKERHUB_IMAGE_PREFIX-frontend:$CI_COMMIT_TAG
+    - docker tag $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG $DOCKERHUB_IMAGE_PREFIX-frontend:latest
     - docker push $CI_REGISTRY_IMAGE/frontend:$CI_COMMIT_TAG
     - docker push $CI_REGISTRY_IMAGE/frontend:latest
+    - docker push $DOCKERHUB_IMAGE_PREFIX-frontend:$CI_COMMIT_TAG
+    - docker push $DOCKERHUB_IMAGE_PREFIX-frontend:latest
   rules:
     - if: '$CI_COMMIT_TAG =~ /^\d+\.\d+\.\d+$/'
