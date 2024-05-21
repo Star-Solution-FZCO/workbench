@@ -78,7 +78,7 @@ class IssueActivity:
         else:
             self.issue = target_['issue']['idReadable']
             self.summary = target_.get('issue', {}).get('summary')
-        self.author = data['author']['login']
+        self.author = data['author']['id']
 
 
 class YoutrackConnector(Connector):
@@ -109,12 +109,12 @@ class YoutrackConnector(Connector):
         end_ts = int(end * 1000)
         url = (
             f'/api/activities?fields=timestamp,'
-            f'added(name,presentation,login,isResolved),'
+            f'added(name,presentation,id,isResolved),'
             'targetMember,'
-            f'removed(name,presentation,login,isResolved),target(id,idReadable,'
+            f'removed(name,presentation,id,isResolved),target(id,idReadable,'
             f'issue(idReadable,project(shortName),summary),summary),'
             f'field(presentation),'
-            f'author(login)'
+            f'author(id)'
             f'&categories=IssueCreatedCategory,CommentTextCategory,CustomFieldCategory,CommentsCategory&'
             f'start={start_ts}&'
             f'end={end_ts}'
@@ -203,14 +203,14 @@ class YoutrackConnector(Connector):
 
     async def get_users(self, employees: Sequence[m.Employee]) -> Dict[int, str]:
         employees_ids_by_email = {emp.email: emp.id for emp in employees}
-        url = '/api/users?fields=name,login,email'
+        url = '/api/users?fields=id,email'
         response = [
             obj
             async for obj in get_objects(url, self.__token, self.__url)
             if 'email' in obj
         ]
         return {
-            employees_ids_by_email[u['email']]: u['login']
+            employees_ids_by_email[u['email']]: u['id']
             for u in response
             if u['email'] in employees_ids_by_email
         }
@@ -223,17 +223,17 @@ class YoutrackConnector(Connector):
         query = f'resolved date: {{{start_.strftime("%Y-%m-%dT%H:%M:%S")}}} .. {{{end_.strftime("%Y-%m-%dT%H:%M:%S")}}}'
         url = (
             '/api/issues?fields=idReadable,resolved,'
-            'customFields(name,value(login))'
+            'customFields(name,value(id))'
             '&customFields=assignee'
             f'&query={quote(query)}'
         )
 
         results: dict[int, list[DoneTask]] = {}
 
-        def _add_done_task(assignee_login: str | None, task_: DoneTask) -> None:
-            if not assignee_login:
+        def _add_done_task(assignee_id: str | None, task_: DoneTask) -> None:
+            if not assignee_id:
                 return
-            if not (emp_id := aliases.get(assignee_login)):
+            if not (emp_id := aliases.get(assignee_id)):
                 return
             if task_.time < start_ or task_.time >= end_:
                 return
@@ -247,7 +247,7 @@ class YoutrackConnector(Connector):
             if not (assignee_value := custom_fields.get('Assignee', {}).get('value')):
                 continue
             _add_done_task(
-                assignee_value.get('login'),
+                assignee_value.get('id'),
                 DoneTask(
                     employee_id=0,
                     source_id=self.source.id,
