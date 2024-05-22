@@ -11,6 +11,7 @@ from .grade import *
 from .group import *
 from .help_center import *
 from .issue import *
+from .linked_accounts import *
 from .notification import *
 from .oauth import *
 from .organization import *
