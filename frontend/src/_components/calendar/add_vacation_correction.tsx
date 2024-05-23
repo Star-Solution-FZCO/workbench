@@ -16,9 +16,7 @@ const AddVacationCorrection: FC<IAddVacationCorrectionProps> = ({
 }) => {
     const [modalOpen, setModalOpen] = useState(false);
     const [days, setDays] = useState("");
-    const [description, setDescription] = useState<string | undefined>(
-        undefined,
-    );
+    const [description, setDescription] = useState<string>("");
 
     const [createEmployeeVacationCorrection, mutationProps] =
         scheduleApi.useCreateEmployeeVacationCorrectionMutation();
@@ -28,7 +26,7 @@ const AddVacationCorrection: FC<IAddVacationCorrectionProps> = ({
             .unwrap()
             .then(() => {
                 setDays("");
-                setDescription(undefined);
+                setDescription("");
                 setModalOpen(false);
                 toast.success(
                     "Vacation correction has been successfully created",
@@ -64,6 +62,22 @@ const AddVacationCorrection: FC<IAddVacationCorrectionProps> = ({
                         onChange={(e) => setDays(e.target.value)}
                     />
 
+                    <Button
+                        onClick={() => setDescription("From previous contract")}
+                        variant="outlined"
+                        size="small"
+                    >
+                        From previous contract
+                    </Button>
+
+                    <Button
+                        onClick={() => setDescription("Compensation")}
+                        variant="outlined"
+                        size="small"
+                    >
+                        Compensation
+                    </Button>
+
                     <TextField
                         placeholder="Description"
                         value={description}
@@ -73,6 +87,7 @@ const AddVacationCorrection: FC<IAddVacationCorrectionProps> = ({
                     <Box display="flex" gap={1}>
                         <LoadingButton
                             variant="outlined"
+                            size="small"
                             onClick={save}
                             loading={mutationProps.isLoading}
                             disabled={!days}
@@ -83,6 +98,7 @@ const AddVacationCorrection: FC<IAddVacationCorrectionProps> = ({
                             onClick={() => setModalOpen(false)}
                             color="error"
                             variant="outlined"
+                            size="small"
                         >
                             Cancel
                         </Button>
