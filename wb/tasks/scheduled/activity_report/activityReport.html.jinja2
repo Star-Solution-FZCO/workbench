@@ -41,6 +41,22 @@
                     <td><a href="{{ public_base_url }}/reports/activity-details?id={{ item['employee'].id }}&start={{ day }}&end={{ day }}">details</a></td>
                 </tr>
             {% endfor %}
+            <tr>
+                <td>Total</td>
+                <td></td>
+                <td>{{ format_zero(item['total'].youtrack) }}</td>
+                <td>{{ format_zero(item['total'].gerrit_merged) }}</td>
+                <td>{{ format_zero(item['total'].gerrit_new) }}</td>
+                <td>{{ format_zero(item['total'].gerrit_reviewed) }}</td>
+                <td>{{ format_zero(item['total'].gerrit_comments) }}</td>
+                <td>{{ format_zero(item['total'].cvs) }}</td>
+                <td>{{ format_zero(item['total'].google_meet) }}</td>
+                <td>{{ format_zero(item['total'].discord_call) }}</td>
+                <td>{{ format_zero(item['total'].pararam) }}</td>
+                <td>{{ format_zero(item['total'].google_drive) }}</td>
+                <td>{{ format_zero(item['total'].zendesk) }}</td>
+                <td></td>
+            </tr>
         </tbody>
     </table>
 {% endfor %}

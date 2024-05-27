@@ -12,11 +12,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 import wb.models as m
+from shared_utils.dataclassutils import sum_dataclasses
 from shared_utils.dateutils import date_range
 from wb.celery_app import celery_app
 from wb.config import CONFIG
 from wb.db import multithreading_safe_async_session
-from wb.services import calc_activity_summary
+from wb.services import ActivitySummaryItem, calc_activity_summary
 from wb.services.schedule import get_employees_days_status
 from wb.tasks.send import task_send_email
 
@@ -153,20 +154,25 @@ async def send_reports(start: date, end: date) -> None:
     for emp in employees.values():
         watched[emp.id].discard(emp.id)
         watched_list = [emp] + [employees[w_id] for w_id in watched[emp.id]]
-        html = jinja_template.render(
-            data=[
+        data = []
+        for w in watched_list:
+            days_data = {}
+            for day, acts in activities[w.id].items():
+                days_data[day] = {
+                    'status': DAY_LABELS[days_status[w.id][day]],
+                    'summary': calc_activity_summary(acts),
+                }
+            data.append(
                 {
                     'employee': w,
-                    'days': {
-                        day: {
-                            'status': DAY_LABELS[days_status[w.id][day]],
-                            'summary': calc_activity_summary(acts),
-                        }
-                        for day, acts in activities[w.id].items()
-                    },
+                    'days': days_data,
+                    'total': sum_dataclasses(
+                        ActivitySummaryItem, [d['summary'] for d in days_data.values()]
+                    ),
                 }
-                for w in watched_list
-            ],
+            )
+        html = jinja_template.render(
+            data=data,
             public_base_url=CONFIG.PUBLIC_BASE_URL,
         )
         csv_data = create_csv(watched_list, activities, sources)
