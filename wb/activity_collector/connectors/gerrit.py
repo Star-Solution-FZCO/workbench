@@ -1,14 +1,18 @@
+import asyncio
 import json
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Sequence
 from urllib.parse import urljoin
 
 import aiohttp
 
 import wb.models as m
+from shared_utils.dateutils import month_range
+from wb.log import log
 from wb.models.activity import Activity, ActivitySource
+from wb.utils.cache import get_key_builder_exclude_args, lru_cache
 
 from .base import Connector, DoneTask
 
@@ -18,6 +22,7 @@ __all__ = ('GerritPresenceConnector',)
 GERRIT_MAGIC_JSON_PREFIX = b")]}'\n"
 GERRIT_AUTH_SUFFIX = '/a'
 COMMENTS_PATTERN = re.compile(r'^\((\d+) comments?\)$')
+UNCACHED_PERIOD_DAYS = 2 * 30
 
 
 def _fill_change_meta(change: dict) -> dict:
@@ -323,15 +328,61 @@ class GerritPresenceConnector(Connector):
                 continue
         return results
 
+    async def _get_changes_changed_in(
+        self,
+        start: float,
+        end: float,
+    ) -> list:
+        log.debug(f'Getting changes from {start} to {end}')
+        start_ = datetime.utcfromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S')
+        end_ = datetime.utcfromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')
+        return await self.__rest.get_changes_list(
+            f'/changes/?q=after:"{start_}" before:"{end_}" '
+            f'branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
+        )
+
     async def get_done_tasks(
         self, start: float, end: float, aliases: dict[str, int]
     ) -> dict[int, list[DoneTask]]:
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals, too-many-branches
+        log.debug(f'[{self.source.name}] Getting done tasks from {start} to {end}')
+        if start > end:
+            return {}
+        changes = {}
         start_ = datetime.utcfromtimestamp(start)
         end_ = datetime.utcfromtimestamp(end)
-        res = await self.__rest.get_changes_list(
-            f'/changes/?q=after:"{start_.strftime("%Y-%m-%d %H:%M:%S")}" branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
+        cached_end = datetime.utcnow() - timedelta(days=UNCACHED_PERIOD_DAYS)
+        log.debug(f'[{self.source.name}] cached_end={cached_end}')
+        tasks = []
+        if cached_end >= start_:
+            tasks.extend(
+                [
+                    _get_changes_updated_by_month(month, year, self)
+                    for year, month in month_range(
+                        (start_.year, start_.month), (cached_end.year, cached_end.month)
+                    )
+                ]
+            )
+        tasks.append(
+            self.__rest.get_changes_list(
+                f'/changes/?q=after:"{max(start_, cached_end).strftime("%Y-%m-%d %H:%M:%S")}" '
+                f'branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
+            )
         )
+        for idx, res in enumerate(await asyncio.gather(*tasks)):
+            log.debug(f'[{self.source.name}] got {len(res)} changes from {idx} task')
+            try:
+                changes.update(
+                    {
+                        c['id']: c
+                        for c in res
+                        if start_ <= datetime.fromisoformat(c['updated']) <= end_
+                    }
+                )
+            except Exception as err:
+                log.error(err)
+                raise
+        log.debug(f'[{self.source.name}] got {len(changes)} changes')
         results = {}
 
         def _add_done_task(author_id_: int, task_: DoneTask) -> None:
@@ -342,7 +393,7 @@ class GerritPresenceConnector(Connector):
                 results[task_.employee_id] = []
             results[task_.employee_id].append(task_)
 
-        for r in res:
+        for r in changes.values():
             parsed_comments = _parse_messages_comments(r.get('messages', []))
             parsed_revisions = _parse_revisions(r.get('revisions', {}))
             not_self_comments = {}
@@ -392,4 +443,19 @@ class GerritPresenceConnector(Connector):
                                 task_link=f'{self.__url}/#/q/{r["id"].split("~")[-1]}',
                             ),
                         )
+        log.debug(f'[{self.source.name}] got {len(results)} done tasks')
         return results
+
+
+@lru_cache(
+    ttl=UNCACHED_PERIOD_DAYS * 24 * 60 * 60,
+    key_builder=get_key_builder_exclude_args(('connector',)),
+)
+async def _get_changes_updated_by_month(
+    month: int, year: int, connector: GerritPresenceConnector
+) -> list:
+    log.debug(f'Getting changes for {year}-{month}')
+    start = datetime(year, month, 1, tzinfo=timezone.utc).timestamp()
+    next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
+    end = datetime(next_year, next_month, 1, tzinfo=timezone.utc).timestamp() - 0.000001
+    return await connector._get_changes_changed_in(start, end)  # pylint: disable=protected-access
