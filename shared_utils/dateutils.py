@@ -7,6 +7,7 @@ __all__ = (
     'day_start',
     'format_date',
     'format_timedelta',
+    'month_range',
     'sum_timedelta',
     'DAYS_OF_WEEK',
 )
@@ -173,3 +174,38 @@ def count_intersection_days(
     intersection_end = min(max(range1), max(range2))
     cnt = (intersection_end - intersection_start).days
     return cnt + 1 if cnt >= 0 else 0
+
+
+def month_range(
+    start: tuple[int, int], end: tuple[int, int]
+) -> t.Iterator[tuple[int, int]]:
+    """
+    Generate a range of months between the given start and end months.
+
+    :param start: A tuple representing the start month. It consists of two elements: the year and the month.
+    :type start: tuple[int, int]
+    :param end: A tuple representing the end month. It consists of two elements: the year and the month.
+    :type end: tuple[int, int]
+    :return: An iterator that yields each month in the range.
+    :rtype: Iterator[tuple[int, int]]
+
+    :Example:
+    >>> list(month_range((2022, 1), (2022, 5)))
+    [(2022, 1), (2022, 2), (2022, 3), (2022, 4), (2022, 5)]
+
+    >>> list(month_range((2022, 5), (2022, 1)))
+    [(2022, 5), (2022, 4), (2022, 3), (2022, 2), (2022, 1)]
+    """
+    if start[1] < 1 or start[1] > 12 or end[1] < 1 or end[1] > 12:
+        raise ValueError('Month must be between 1 and 12')
+    inverted = 1
+    if start > end:
+        inverted = -1
+    curr = start
+    while 0 <= inverted * (end[0] - curr[0]) * 12 + inverted * (end[1] - curr[1]):
+        yield curr
+        curr = (curr[0], curr[1] + inverted)
+        if curr[1] > 12:
+            curr = (curr[0] + 1, 1)
+        elif curr[1] < 1:
+            curr = (curr[0] - 1, 12)
