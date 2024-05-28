@@ -357,7 +357,7 @@ class GerritPresenceConnector(Connector):
         if cached_end >= start_:
             tasks.extend(
                 [
-                    _get_changes_updated_by_month(month, year, self)
+                    _get_changes_updated_by_month(month, year, self.source.id, self)
                     for year, month in month_range(
                         (start_.year, start_.month), (cached_end.year, cached_end.month)
                     )
@@ -452,7 +452,10 @@ class GerritPresenceConnector(Connector):
     key_builder=get_key_builder_exclude_args(('connector',)),
 )
 async def _get_changes_updated_by_month(
-    month: int, year: int, connector: GerritPresenceConnector
+    month: int,
+    year: int,
+    source_id: int,  # pylint: disable=unused-argument
+    connector: GerritPresenceConnector,
 ) -> list:
     log.debug(f'Getting changes for {year}-{month}')
     start = datetime(year, month, 1, tzinfo=timezone.utc).timestamp()

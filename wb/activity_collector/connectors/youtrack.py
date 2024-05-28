@@ -248,7 +248,7 @@ class YoutrackConnector(Connector):
         if cached_end >= start_:
             tasks.extend(
                 [
-                    _get_resolved_issues_by_month(month, year, self)
+                    _get_resolved_issues_by_month(month, year, self.source.id, self)
                     for year, month in month_range(
                         (start_.year, start_.month), (cached_end.year, cached_end.month)
                     )
@@ -320,7 +320,10 @@ def _parse_custom_fields(custom_fields: list[dict]) -> dict:
     key_builder=get_key_builder_exclude_args(('connector',)),
 )
 async def _get_resolved_issues_by_month(
-    month: int, year: int, connector: YoutrackConnector
+    month: int,
+    year: int,
+    source_id: int,  # pylint: disable=unused-argument
+    connector: YoutrackConnector,
 ) -> list:
     start = datetime(year, month, 1, tzinfo=timezone.utc).timestamp()
     next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
