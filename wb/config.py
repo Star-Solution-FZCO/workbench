@@ -75,14 +75,17 @@ CONFIG = Dynaconf(
         ),
         Validator('DB_URI', default='postgresql+asyncpg://me:me@127.0.0.1:5432/me'),
         Validator('DB_ENCRYPT_KEY', required=True),
-        Validator('LDAP_URI', 'LDAP_BASE_DN', cast=str, default=''),
-        Validator('LDAP_USER_DEFAULT_DOMAIN', cast=str, default=''),
         Validator(
-            'LDAP_SEARCH_QUERY',
-            default='(&(objectCategory=person)(objectClass=User)(!(userAccountControl=512))(!(userAccountControl=66050))(|(sAMAccountName=%(login)s)('
-            'mail=%(login)s)))',
-            cast=str,
-            required=True,
+            'LDAP_URI',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('AUTH_MODE', condition=lambda v: v == AuthModeT.LDAP),
+        ),
+        Validator(
+            'LDAP_USER_DEFAULT_DOMAIN',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('AUTH_MODE', condition=lambda v: v == AuthModeT.LDAP),
         ),
         Validator(
             'REFRESH_TOKEN_NON_REMEMBER_EXPIRES',
