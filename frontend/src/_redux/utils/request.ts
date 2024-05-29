@@ -145,6 +145,16 @@ export function requestRefreshToken<T>(
     });
 }
 
+export function sendRegistrationRequest(
+    register_token: string,
+    password: string,
+): Promise<{ success: boolean }> {
+    return _request<{ success: boolean }>(
+        { url: "/auth/register", data: { register_token, password } },
+        true,
+    );
+}
+
 export function request<T>(url: string): Promise<T>;
 export function request<T>(params: RequestParamsT): Promise<T>;
 export function request<T>(url: string, method?: MethodT): Promise<T>;

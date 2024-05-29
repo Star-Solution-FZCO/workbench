@@ -3,57 +3,36 @@ import { LoadingButton } from "@mui/lab";
 import {
     Avatar,
     Box,
-    Checkbox,
     Container,
     CssBaseline,
-    FormControlLabel,
     TextField,
     ThemeProvider,
     Typography,
 } from "@mui/material";
 import { Title } from "_components";
-import { authActions, profileLoaded, useAppDispatch } from "_redux";
+import { authActions } from "_redux";
 import { AUTH_MODE } from "config";
 import React, { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { theme } from "theme";
-import { ProfileModelT } from "types/models";
 
 type LoginPageStateT = {
-    username: string;
+    register_token: string;
     password: string;
-    remember: boolean;
     inProgress: boolean;
 };
 
-const authLabel = () => {
-    switch (AUTH_MODE) {
-        case "ldap":
-            return <>Use your domain credentials for login.</>;
-        case "local":
-            return (
-                <>
-                    Use your WB credentials for login (
-                    <a href={"/register"}>registration</a>).
-                </>
-            );
-        case "dev":
-            return <>Use dev credentials for login.</>;
-        default:
-            return <></>;
+export const RegisterPage: React.FC = () => {
+    if (AUTH_MODE !== "local") {
+        return <Typography>Registration is disabled.</Typography>;
     }
-};
 
-export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-    const [searchParams] = useSearchParams();
 
     const [state, setState] = useState<LoginPageStateT>({
-        username: "",
+        register_token: "",
         password: "",
-        remember: false,
         inProgress: false,
     });
 
@@ -61,25 +40,19 @@ export const LoginPage: React.FC = () => {
         e.preventDefault();
         setState({ ...state, inProgress: true });
 
-        const handleSuccessLogin = (data: ProfileModelT) => {
-            dispatch(profileLoaded(data));
-
+        const handleSuccessSubmit = () => {
             setState({ ...state, inProgress: false });
-
-            if (searchParams.get("redirectTo"))
-                navigate(`${searchParams.get("redirectTo")}`);
-            else navigate("/");
+            navigate("/login");
         };
 
-        const handleErrorLogin = (response: any) => {
+        const handleErrorSubmit = (response: any) => {
             setState({ ...state, inProgress: false });
             toast.error(response.detail || response.message);
         };
 
-        authActions.login(handleSuccessLogin, handleErrorLogin)(
-            state.username,
+        authActions.register(handleSuccessSubmit, handleErrorSubmit)(
+            state.register_token,
             state.password,
-            state.remember,
         );
     };
 
@@ -89,15 +62,9 @@ export const LoginPage: React.FC = () => {
         setState({ ...state, ...{ [name]: value } });
     };
 
-    const handleCheckBoxChange = ({
-        target: { value, checked },
-    }: React.ChangeEvent<HTMLInputElement>) => {
-        setState({ ...state, ...{ [value]: checked } });
-    };
-
     return (
         <ThemeProvider theme={theme}>
-            <Title title="Login" />
+            <Title title="Registration" />
 
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
@@ -114,7 +81,7 @@ export const LoginPage: React.FC = () => {
                     </Avatar>
 
                     <Typography component="h1" variant="h5">
-                        Sign in
+                        Registration
                     </Typography>
 
                     <Box component="form" noValidate sx={{ mt: 1 }}>
@@ -122,14 +89,12 @@ export const LoginPage: React.FC = () => {
                             margin="normal"
                             required
                             fullWidth
-                            id="username"
-                            label="Username"
-                            name="username"
-                            autoComplete="username"
+                            id="register_token"
+                            label="Registration token"
+                            name="register_token"
                             autoFocus
                             variant="standard"
                             onChange={handleChange}
-                            value={state.username}
                         />
                         <TextField
                             margin="normal"
@@ -144,17 +109,6 @@ export const LoginPage: React.FC = () => {
                             onChange={handleChange}
                             value={state.password}
                         />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    value="remember"
-                                    color="primary"
-                                    checked={state.remember}
-                                    onChange={handleCheckBoxChange}
-                                />
-                            }
-                            label="Remember me"
-                        />
 
                         <LoadingButton
                             type="submit"
@@ -164,10 +118,12 @@ export const LoginPage: React.FC = () => {
                             onClick={handleSubmit}
                             loading={state.inProgress}
                         >
-                            Sign In
+                            Submit
                         </LoadingButton>
 
-                        <Typography variant="body2">{authLabel()}</Typography>
+                        <Typography variant="body2">
+                            <a href={"/login"}>Login</a>
+                        </Typography>
                     </Box>
                 </Box>
             </Container>

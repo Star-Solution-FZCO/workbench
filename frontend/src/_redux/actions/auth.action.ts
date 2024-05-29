@@ -14,4 +14,12 @@ export const authActions = {
                 .catch((error) => handleError(error));
         },
     logout: () => authService.logout(),
+    register:
+        (handleSuccess: () => void, handleError: (error: string) => void) =>
+        (register_token: string, password: string) => {
+            authService
+                .register(register_token, password)
+                .then(() => handleSuccess())
+                .catch((error) => handleError(error));
+        },
 };

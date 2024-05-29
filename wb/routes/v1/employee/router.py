@@ -3,10 +3,11 @@ import csv
 import io
 import re
 import secrets
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from http import HTTPStatus
 from typing import Any, Dict
 
+import jwt
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
@@ -20,7 +21,7 @@ from wb.acl import (
     is_employee_field_viewable,
     list_employee_readable_fields,
 )
-from wb.config import CONFIG
+from wb.config import CONFIG, AuthModeT
 from wb.db import get_db_session
 from wb.schemas import (
     BaseListOutput,
@@ -70,6 +71,7 @@ from .schemas import (
     EmployeeDaysStatusOut,
     EmployeeDayStatusOut,
     EmployeeHierarchyOut,
+    EmployeeRegisterOut,
     EmployeeTMKeyUpdateOut,
     EmployeeUpdate,
 )
@@ -777,3 +779,33 @@ async def set_tm_key(
         emp.tm.set_key(tm_key)
     await session.commit()
     return make_success_output(payload=EmployeeTMKeyUpdateOut(tm_key=tm_key))
+
+
+@router.put('/{employee_id}/register')
+async def register_user(
+    employee_id: EmployeeIDParamT,
+    session: AsyncSession = Depends(get_db_session),
+) -> BasePayloadOutput[EmployeeRegisterOut]:
+    if CONFIG.AUTH_MODE != AuthModeT.LOCAL:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
+        )
+    curr_user = current_employee()
+    if not curr_user.is_admin or curr_user.id == employee_id:
+        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
+    emp = await resolve_employee_id_param(employee_id, session=session)
+    user = await session.scalar(sa.select(m.User).where(m.User.username == emp.account))
+    if user:
+        raise HTTPException(HTTPStatus.CONFLICT, detail='user already registered')
+    register_token_data = {
+        'employee_id': emp.id,
+        'exp': (datetime.now() + timedelta(days=1)).timestamp(),
+    }
+    register_token = jwt.encode(
+        register_token_data, CONFIG.JWT_SECRET, algorithm='HS256'
+    )
+    return make_success_output(
+        payload=EmployeeRegisterOut(
+            register_token=register_token,
+        )
+    )

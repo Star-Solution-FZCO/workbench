@@ -13,6 +13,7 @@ interface ImportMetaEnv {
     readonly VITE_DEFAULT_EMAIL_DOMAIN: string;
     readonly VITE_OFFBOARD_CHECKLIST_URL: string;
     readonly VITE_CREDENTIALS_SERVICE_URL: string;
+    readonly VITE_AUTH_MODE: string;
 }
 
 interface ImportMeta {
