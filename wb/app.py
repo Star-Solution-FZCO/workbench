@@ -78,7 +78,6 @@ def authjwt_exception_handler(_: Request, exc: AuthJWTException) -> JSONResponse
 # pylint: disable=wrong-import-position
 from wb.routes.auth import router as authRouter  # noqa
 from wb.routes.avatar import router as avatar_router  # noqa
-from wb.routes.legacy import __routers__ as legacy_routers  # noqa
 from wb.routes.oauth.router import router as oauth_router  # noqa
 from wb.routes.protected import __routers__ as protected_routers  # noqa
 from wb.routes.public import router as public_router  # noqa
@@ -90,7 +89,11 @@ app.include_router(public_router)
 app.include_router(oauth_router)
 for router in __routers__:
     app.include_router(router, dependencies=[Depends(current_user_context_dependency)])
-for router in legacy_routers:
-    app.include_router(router)
 for router in protected_routers:
     app.include_router(router, include_in_schema=False)
+
+if CONFIG.TM_CLIENT_ENABLE:
+    from wb.routes.legacy import __routers__ as legacy_routers  # noqa
+
+    for router in legacy_routers:
+        app.include_router(router)

@@ -11,8 +11,6 @@ __all__ = (
     'CONFIG',
     'API_KEYS',
     'AuthModeT',
-    'TM_CLIENT_VERSION',
-    'TM_CLIENT_DIR',
 )
 
 
@@ -178,8 +176,18 @@ CONFIG = Dynaconf(
         Validator(
             'CALDAV_URL', 'CALDAV_USERNAME', 'CALDAV_PASSWORD', cast=str, default=''
         ),
-        Validator('TM_CLIENT_VERSION', cast=int, required=True),
-        Validator('TM_CLIENT_DIR', default='/data/tm'),
+        Validator('TM_CLIENT_ENABLE', cast=bool, default=True),
+        Validator(
+            'TM_CLIENT_VERSION',
+            cast=int,
+            must_exist=True,
+            when=Validator('TM_CLIENT_ENABLE', condition=bool),
+        ),
+        Validator(
+            'TM_CLIENT_DIR',
+            default='/data/tm',
+            when=Validator('TM_CLIENT_ENABLE', condition=bool),
+        ),
     ],
 )
 CONFIG.configure()
@@ -188,6 +196,3 @@ API_KEYS = parse_api_keys(CONFIG.api_keys)
 if CONFIG.DEV_MODE:
     CONFIG.SEND_NOTIFICATION_TO_CONSOLE = True
     CONFIG.AUTH_MODE = AuthModeT.DEV
-
-TM_CLIENT_VERSION = CONFIG.TM_CLIENT_VERSION
-TM_CLIENT_DIR = CONFIG.TM_CLIENT_DIR
