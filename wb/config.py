@@ -9,7 +9,6 @@ from dynaconf import Dynaconf, Validator
 
 __all__ = (
     'CONFIG',
-    'STORAGE_DIR',
     'API_KEYS',
     'AuthModeT',
     'TM_CLIENT_VERSION',
@@ -102,7 +101,6 @@ CONFIG = Dynaconf(
             cast=int,
             default=int(datetime.timedelta(minutes=15).total_seconds()),
         ),
-        Validator('STORAGE_DIR', cast=str, default=opj(ROOT, 'var')),
         Validator('CA_CERTS', default=''),
         Validator('BBOT_API_URL', 'BBOT_API_TOKEN', cast=str),
         Validator('CELERY_BROKER_URL', cast=str, default='redis://localhost:6379'),
@@ -162,7 +160,6 @@ CONFIG = Dynaconf(
     ],
 )
 CONFIG.configure()
-STORAGE_DIR = CONFIG.STORAGE_DIR
 API_KEYS = parse_api_keys(CONFIG.api_keys)
 
 if CONFIG.DEV_MODE:

@@ -3,7 +3,6 @@ import os
 import sentry_sdk
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
 from sentry_sdk.integrations.fastapi import FastApiIntegration
@@ -13,7 +12,7 @@ from starlette.responses import JSONResponse
 from starsol_fastapi_jwt_auth import AuthJWT
 from starsol_fastapi_jwt_auth.exceptions import AuthJWTException
 
-from wb.config import CONFIG, STORAGE_DIR
+from wb.config import CONFIG
 from wb.utils.current_user import current_user_context_dependency
 
 VERSION = os.environ.get('APP_VERSION', '__DEV__')
@@ -40,7 +39,6 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-app.mount('/storage', StaticFiles(directory=STORAGE_DIR), name='static')
 
 instrumentator = Instrumentator(
     should_group_status_codes=False,
