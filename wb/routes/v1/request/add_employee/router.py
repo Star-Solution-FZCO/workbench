@@ -240,14 +240,6 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         approved_by_hr_id=curr_user.id if auto_approved else None,
     )
     session.add(obj)
-    if CONFIG.DEV_MODE:
-        employee_data_as_dict = employee_data.dict()
-        employee_data_as_dict['work_started'] = employee_data.work_started.strftime(
-            '%Y-%m-%d'
-        )
-        obj.employee_data = employee_data_as_dict
-        await session.commit()
-        return make_id_output(obj.id)
     await validate_add_employee_request_data(
         onboarding_data=onboarding_data,
         settings=settings,
@@ -372,19 +364,6 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
             detail=f'Username {employee_data["account"]} is similar to {similar_username}',
         )
     request_onboarding_data = json.loads(request.onboarding_data)
-    if CONFIG.DEV_MODE:
-        employee_data['work_started'] = employee_data['work_started'].strftime(
-            '%Y-%m-%d'
-        )
-        request.employee_data = employee_data
-        onboarding_data['start'] = onboarding_data['start'].isoformat()
-        onboarding_data['end'] = onboarding_data['end'].isoformat()
-        onboarding_data['calendar_events'] = request_onboarding_data.get(
-            'calendar_events', []
-        )
-        request.onboarding_data = json.dumps(onboarding_data)
-        await session.commit()
-        return make_id_output(request.id)
     onboarding_data['start'] = onboarding_data['start'].isoformat()
     onboarding_data['end'] = onboarding_data['end'].isoformat()
     onboarding_data['calendar_events'] = request_onboarding_data.get(
@@ -508,8 +487,6 @@ async def approve_add_employee_request(  # pylint: disable=too-many-branches, to
             await session.commit()
         except IntegrityError as err:
             raise HTTPException(HTTPStatus.CONFLICT, detail='duplicate') from err
-    if CONFIG.DEV_MODE:
-        return make_id_output(request.id)
     settings: m.EmployeeRequestSettings | None = await session.scalar(
         sa.select(m.EmployeeRequestSettings)
     )
@@ -545,8 +522,6 @@ async def cancel_add_employee_request(
     request.status = 'CANCELED'
     request.updated = datetime.utcnow()
     await session.commit()
-    if CONFIG.DEV_MODE:
-        return make_id_output(request.id)
     settings: m.EmployeeRequestSettings | None = await session.scalar(
         sa.select(m.EmployeeRequestSettings)
     )
