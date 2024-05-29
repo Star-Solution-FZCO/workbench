@@ -84,8 +84,7 @@ CONFIG = Dynaconf(
         Validator(
             'LDAP_USER_DEFAULT_DOMAIN',
             is_type_of=str,
-            must_exist=True,
-            when=Validator('AUTH_MODE', condition=lambda v: v == AuthModeT.LDAP),
+            default='',
         ),
         Validator(
             'REFRESH_TOKEN_NON_REMEMBER_EXPIRES',
