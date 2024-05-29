@@ -268,35 +268,39 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
             description=description,
         )
         events.append(event)
-    youtrack_processor = YoutrackProcessor(session=session)
     link_to_request = f'[View request in Workbench]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{obj.id})'
     calendar_links = '\n'.join(
         f'[Calendar event]({str(event.url)})' for event in events
     )
-    issue_description = '\n'.join(
-        [link_to_request, calendar_links, onboarding_data.description]
-    )
-    target_project = next(
-        (project for project in settings.youtrack_projects if project['main']),
-        None,
-    )
-    if not target_project:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            detail='No target YouTrack project in settings. Customize projects in request settings',
+    issue = None
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        issue_description = '\n'.join(
+            [link_to_request, calendar_links, onboarding_data.description]
         )
-    try:
-        issue = await youtrack_processor.create_issue(
-            user=curr_user,
-            project_short_name=target_project['short_name'],
-            fields=['id', 'idReadable'],
-            summary=base_summary
-            + f' - Start date: {employee_data.work_started.strftime("%d/%m/%Y")}',
-            description=issue_description,
-            markdown=True,
+        target_project = next(
+            (project for project in settings.youtrack_projects if project['main']),
+            None,
         )
-    except YoutrackException as err:
-        raise HTTPException(HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(err)) from err
+        if not target_project:
+            raise HTTPException(
+                HTTPStatus.CONFLICT,
+                detail='No target YouTrack project in settings. Customize projects in request settings',
+            )
+        try:
+            issue = await youtrack_processor.create_issue(
+                user=curr_user,
+                project_short_name=target_project['short_name'],
+                fields=['id', 'idReadable'],
+                summary=base_summary
+                + f' - Start date: {employee_data.work_started.strftime("%d/%m/%Y")}',
+                description=issue_description,
+                markdown=True,
+            )
+        except YoutrackException as err:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(err)
+            ) from err
     employee_data_as_dict = employee_data.dict()
     onboarding_data_as_dict = onboarding_data.dict()
     employee_data_as_dict['work_started'] = employee_data.work_started.strftime(
@@ -308,7 +312,9 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         {'id': event.vobject_instance.vevent.uid.value, 'link': str(event.url)}
         for event in events
     ]
-    onboarding_data_as_dict['youtrack_issue_id'] = issue['idReadable']
+    onboarding_data_as_dict['youtrack_issue_id'] = (
+        issue['idReadable'] if issue else None
+    )
     obj.employee_data = employee_data_as_dict
     obj.onboarding_data = json.dumps(onboarding_data_as_dict)
     await session.commit()
@@ -402,27 +408,28 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
             summary=base_summary + ' onboarding',
             description=description,
         )
-    youtrack_processor = YoutrackProcessor(session=session)
-    target_project = next(
-        project for project in settings.youtrack_projects if project['main']
-    )
-    if not target_project:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            detail='No target YouTrack project in settings. Customize projects in request settings',
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        target_project = next(
+            project for project in settings.youtrack_projects if project['main']
         )
-    await youtrack_processor.update_issue(
-        issue_id=request_onboarding_data['youtrack_issue_id'],
-        user=curr_user,
-        project_short_name=target_project['short_name'],
-        summary=base_summary
-        + f' - Start date: {employee_data["work_started"].strftime("%d/%m/%Y")}',
-    )
-    await youtrack_processor.create_issue_comment(
-        issue_id=request_onboarding_data['youtrack_issue_id'],
-        user=curr_user,
-        text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
-    )
+        if not target_project:
+            raise HTTPException(
+                HTTPStatus.CONFLICT,
+                detail='No target YouTrack project in settings. Customize projects in request settings',
+            )
+        await youtrack_processor.update_issue(
+            issue_id=request_onboarding_data['youtrack_issue_id'],
+            user=curr_user,
+            project_short_name=target_project['short_name'],
+            summary=base_summary
+            + f' - Start date: {employee_data["work_started"].strftime("%d/%m/%Y")}',
+        )
+        await youtrack_processor.create_issue_comment(
+            issue_id=request_onboarding_data['youtrack_issue_id'],
+            user=curr_user,
+            text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
+        )
     request.onboarding_data = json.dumps(onboarding_data)
     employee_data['work_started'] = employee_data['work_started'].strftime('%Y-%m-%d')
     request.employee_data = employee_data

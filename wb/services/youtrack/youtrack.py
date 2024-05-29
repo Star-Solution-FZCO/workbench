@@ -289,7 +289,6 @@ class _AdminYoutrackProcessor:
 
 class YoutrackProcessor:  # pylint: disable=too-many-public-methods
     type = name = NAME
-    token: str = CONFIG.YOUTRACK_API_TOKEN
     timeout: int
     issue_id_pattern: Pattern
     __admin: '_AdminYoutrackProcessor'
@@ -299,6 +298,7 @@ class YoutrackProcessor:  # pylint: disable=too-many-public-methods
         self.timeout = TIMEOUT
         self.base_url = CONFIG.YOUTRACK_URL
         self.youtrack_scope = CONFIG.YOUTRACK_SCOPE
+        self.token = CONFIG.YOUTRACK_API_TOKEN
         self.session = session
         if self.base_url.endswith('/'):
             self.base_url = self.base_url[:-1]

@@ -105,11 +105,24 @@ CONFIG = Dynaconf(
         Validator('BBOT_API_URL', 'BBOT_API_TOKEN', cast=str),
         Validator('CELERY_BROKER_URL', cast=str, default='redis://localhost:6379'),
         Validator('REDIS_URL', cast=str, default='redis://localhost:6379'),
+        Validator('YOUTRACK_URL', is_type_of=str, default=''),
         Validator(
-            'YOUTRACK_URL', 'YOUTRACK_API_TOKEN', 'YOUTRACK_SCOPE', cast=str, default=''
+            'YOUTRACK_API_TOKEN',
+            must_exist=True,
+            is_type_of=str,
+            when=Validator('YOUTRACK_URL', condition=bool),
         ),
         Validator(
-            'YOUTRACK_USER_TOKEN_PREFIX', cast=str, default='wb-help-center-access'
+            'YOUTRACK_SCOPE',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('YOUTRACK_URL', condition=bool),
+        ),
+        Validator(
+            'YOUTRACK_USER_TOKEN_PREFIX',
+            is_type_of=str,
+            default='wb-help-center-access',
+            when=Validator('YOUTRACK_URL', condition=bool),
         ),
         Validator(
             'S3_ACCESS_KEY',

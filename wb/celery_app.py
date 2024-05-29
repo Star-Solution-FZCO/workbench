@@ -16,10 +16,6 @@ celery_app.autodiscover_tasks(
     ]
 )
 celery_app.conf.beat_schedule = {
-    'task-sync-youtrack-projects': {
-        'task': 'sync_youtrack_projects',
-        'schedule': crontab(hour='1', minute='0'),
-    },
     'task-quarter-grade-check': {
         'task': 'quarter_grade_check',
         'schedule': crontab(
@@ -66,8 +62,18 @@ celery_app.conf.beat_schedule = {
         'task': 'monthly_counteragents_check',
         'schedule': crontab(hour='6', minute='0', day_of_month='1'),
     },
-    'task-weekly-collect-issues': {
-        'task': 'weekly_collect_issues',
-        'schedule': crontab(hour='00', minute='00', day_of_week='monday'),
-    },
 }
+
+if CONFIG.YOUTRACK_URL:
+    celery_app.conf.beat_schedule.update(
+        {
+            'task-sync-youtrack-projects': {
+                'task': 'sync_youtrack_projects',
+                'schedule': crontab(hour='1', minute='0'),
+            },
+            'task-weekly-collect-issues': {
+                'task': 'weekly_collect_issues',
+                'schedule': crontab(hour='0', minute='1', day_of_week='monday'),
+            },
+        }
+    )

@@ -12,15 +12,12 @@ from wb.services.youtrack.youtrack import _AdminYoutrackProcessor as YoutrackPro
 __all__ = ('task_weekly_collect_issues',)
 
 
-YOUTRACK_URL = CONFIG.YOUTRACK_URL
-YOUTRACK_API_TOKEN = CONFIG.YOUTRACK_API_TOKEN
 TIMEOUT = 60
-YOUTRACK_SCOPE = CONFIG.YOUTRACK_SCOPE
 
 
-def fetch_issues(projects: list[str]):
+def fetch_issues(projects: list[str]) -> list:
     youtrack_processor = YoutrackProcessor(
-        YOUTRACK_URL, YOUTRACK_API_TOKEN, TIMEOUT, YOUTRACK_SCOPE
+        CONFIG.YOUTRACK_URL, CONFIG.YOUTRACK_API_TOKEN, TIMEOUT, CONFIG.YOUTRACK_SCOPE
     )
     query = 'Assignee: -Unassigned Due Date: {minus 1w} .. {plus 1w}'
     if projects:
@@ -112,7 +109,7 @@ async def weekly_collect_issues() -> None:
 
 @celery_app.task(name='weekly_collect_issues')
 def task_weekly_collect_issues() -> None:
-    if not YOUTRACK_URL:
+    if not CONFIG.YOUTRACK_URL:
         return
     print('start collect issues')
     asyncio.run(weekly_collect_issues())
