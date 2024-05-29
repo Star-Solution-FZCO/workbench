@@ -160,10 +160,6 @@ CONFIG = Dynaconf(
         Validator('EMAIL_DOMAIN_WHITELIST', default=['localhost']),
         Validator('OAUTH_JWK_PRIVATE_KEY', default='etc/oauth/jwk.key'),
         Validator('OAUTH_JWK_PUBLIC_CERT', default='etc/oauth/jwk.crt'),
-        Validator(
-            'GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_PATH',
-            default='etc/google/credentials.json',
-        ),
         Validator('OTP_DIGITS', cast=int, default=6),
         Validator('OTP_PERIOD', cast=int, default=30),
         Validator('OTP_DIGEST', cast=str, default='sha1'),
@@ -176,8 +172,18 @@ CONFIG = Dynaconf(
             cast=str,
             default='etc/credentials/cm-auth.pem',
         ),
+        Validator('CALDAV_URL', is_type_of=str, default=''),
         Validator(
-            'CALDAV_URL', 'CALDAV_USERNAME', 'CALDAV_PASSWORD', cast=str, default=''
+            'CALDAV_USERNAME',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CALDAV_URL', condition=bool),
+        ),
+        Validator(
+            'CALDAV_PASSWORD',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CALDAV_URL', condition=bool),
         ),
         Validator('TM_CLIENT_ENABLE', cast=bool, default=True),
         Validator(

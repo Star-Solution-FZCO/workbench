@@ -23,7 +23,7 @@ from wb.schemas import (
     ListFilterParams,
     SuccessPayloadOutput,
 )
-from wb.services.calendar import CalDAVClient
+from wb.services.calendar import CalDAVClient, get_calendar_client
 from wb.services.employee import check_similar_usernames
 from wb.services.youtrack.utils import YoutrackException
 from wb.services.youtrack.youtrack import YoutrackProcessor
@@ -64,7 +64,7 @@ def create_datetime(dt: datetime, time: str) -> datetime:
 async def validate_add_employee_request_data(
     onboarding_data: OnboardingData,
     settings: m.EmployeeRequestSettings,
-    calendar: CalDAVClient,
+    calendar: CalDAVClient | None,
 ) -> None:
     now = datetime.now(timezone.utc)
     if onboarding_data.start < now or onboarding_data.end < now:
@@ -92,6 +92,8 @@ async def validate_add_employee_request_data(
             HTTPStatus.BAD_REQUEST,
             detail='Onboarding time outside of working hours',
         )
+    if not calendar:
+        return
     events: list[caldav.Event] = []
     for calendar_id in settings.calendar_ids:
         events.extend(
@@ -194,7 +196,7 @@ async def get_add_employee_request(
 async def create_add_employee_request(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     body: AddEmployeeRequestCreate,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -259,15 +261,16 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         else (settings.content or '')
     )
     events: list[caldav.Event] = []
-    for calendar_id in settings.calendar_ids:
-        event = calendar.create_event(
-            start=onboarding_data.start,
-            end=onboarding_data.end,
-            calendar_id=calendar_id,
-            summary=base_summary + ' onboarding',
-            description=description,
-        )
-        events.append(event)
+    if calendar:
+        for calendar_id in settings.calendar_ids:
+            event = calendar.create_event(
+                start=onboarding_data.start,
+                end=onboarding_data.end,
+                calendar_id=calendar_id,
+                summary=base_summary + ' onboarding',
+                description=description,
+            )
+            events.append(event)
     link_to_request = f'[View request in Workbench]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{obj.id})'
     calendar_links = '\n'.join(
         f'[Calendar event]({str(event.url)})' for event in events
@@ -336,7 +339,7 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
     request_id: int,
     body: AddEmployeeRequestUpdate,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -400,14 +403,15 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
         if body.onboarding_data.description
         else (settings.content or '')
     )
-    for event in request_onboarding_data.get('calendar_events', []):
-        calendar.update_event(
-            uid=event['id'],
-            start=body.onboarding_data.start,
-            end=body.onboarding_data.end,
-            summary=base_summary + ' onboarding',
-            description=description,
-        )
+    if calendar:
+        for event in request_onboarding_data.get('calendar_events', []):
+            calendar.update_event(
+                uid=event['id'],
+                start=body.onboarding_data.start,
+                end=body.onboarding_data.end,
+                summary=base_summary + ' onboarding',
+                description=description,
+            )
     if CONFIG.YOUTRACK_URL:
         youtrack_processor = YoutrackProcessor(session=session)
         target_project = next(
@@ -521,7 +525,7 @@ async def approve_add_employee_request(  # pylint: disable=too-many-branches, to
 async def cancel_add_employee_request(
     request_id: int,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(CalDAVClient),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -548,8 +552,9 @@ async def cancel_add_employee_request(
     )
     if not settings:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Settings not found')
-    for event in onboarding_data_as_dict.get('calendar_events', []):
-        calendar.delete_event(uid=event['id'])
+    if calendar:
+        for event in onboarding_data_as_dict.get('calendar_events', []):
+            calendar.delete_event(uid=event['id'])
     employee_data = request.employee_data
     request_link = f'[{employee_data["english_name"]}]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{request.id})'
     msg = f'Request to add employee {request_link} was cancelled. {request.created_by.link_pararam}'
