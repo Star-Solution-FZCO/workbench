@@ -1,3 +1,4 @@
+from http import HTTPStatus
 from typing import Any
 
 import sqlalchemy as sa
@@ -34,6 +35,10 @@ async def list_articles(
     params: ConfluenceSearchParams = Depends(ConfluenceSearchParams),
     session: AsyncSession = Depends(get_db_session),
 ) -> BasePayloadOutput[Any]:
+    if not confluence_api:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Confluence API is not configured'
+        )
     q = sa.select(m.Portal).where(m.Portal.is_active.is_(True))
     if params.portal_id:
         q = sa.select(m.Portal).where(m.Portal.id == params.portal_id)
@@ -48,6 +53,10 @@ async def list_articles(
 async def list_space(
     query: ConfluenceAPIParams = Depends(ConfluenceAPIParams),
 ) -> BasePayloadOutput[Any]:
+    if not confluence_api:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Confluence API is not configured'
+        )
     results = await confluence_api.list_space(params=query)
     return make_success_output(payload=results)
 
@@ -56,6 +65,10 @@ async def list_space(
 async def space_select(
     query: ConfluenceAPIParams = Depends(ConfluenceAPIParams),
 ) -> SelectOutput:
+    if not confluence_api:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Confluence API is not configured'
+        )
     space_list_results = await confluence_api.list_space(params=query)
     results = space_list_results['results']
     return make_select_output(

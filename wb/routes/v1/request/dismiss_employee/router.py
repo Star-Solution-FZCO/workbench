@@ -40,8 +40,6 @@ router = APIRouter(
     prefix='/api/v1/request/dismiss-employee', tags=['v1', 'dismiss-employee-request']
 )
 
-CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID = CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
-
 
 @router.get('/list')
 async def list_dismiss_employee_requests(
@@ -137,9 +135,11 @@ async def create_dismiss_employee_request(  # pylint: disable=too-many-locals
     link_to_request = f'[View request in Workbench]({CONFIG.PUBLIC_BASE_URL}/requests/dismiss-employee/{request.id})'
     if CONFIG.YOUTRACK_URL:
         youtrack_processor = YoutrackProcessor(session=session)
-        article_content = await confluence_api.get_page_content(
-            CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
-        )
+        article_content = None
+        if confluence_api and CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID:
+            article_content = await confluence_api.get_page_content(
+                CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
+            )
         article_markdown = (
             confluence_xml_converter.to_markdown(article_content)
             if article_content

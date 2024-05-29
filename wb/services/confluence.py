@@ -113,4 +113,9 @@ class ConfluenceRestAPI:
 
 
 confluence_xml_converter = ConfluenceXMLConverter()
-confluence_api = ConfluenceRestAPI(CONFIG.CONFLUENCE_URL, CONFIG.CONFLUENCE_API_TOKEN)
+
+confluence_api = None  # pylint: disable=invalid-name
+if CONFIG.CONFLUENCE_URL:
+    confluence_api = ConfluenceRestAPI(
+        CONFIG.CONFLUENCE_URL, CONFIG.CONFLUENCE_API_TOKEN
+    )

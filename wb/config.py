@@ -143,9 +143,19 @@ CONFIG = Dynaconf(
             'ACTIVITY_REPORTS_EMAIL', cast=str, default='activity@localhost.localdomain'
         ),
         Validator('PRESENCE_BOT_PARARAM_KEY', cast=str, default=''),
-        Validator('CONFLUENCE_URL', cast=str, default=''),
-        Validator('CONFLUENCE_API_TOKEN', cast=str, default=''),
-        Validator('CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID', cast=str, default=''),
+        Validator('CONFLUENCE_URL', is_type_of=str, default=''),
+        Validator(
+            'CONFLUENCE_API_TOKEN',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CONFLUENCE_URL', condition=bool),
+        ),
+        Validator(
+            'CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID',
+            is_type_of=str,
+            default='',
+            when=Validator('CONFLUENCE_URL', condition=bool),
+        ),
         Validator('EMAIL_DOMAIN_WHITELIST', default=['localhost']),
         Validator('OAUTH_JWK_PRIVATE_KEY', default='etc/oauth/jwk.key'),
         Validator('OAUTH_JWK_PUBLIC_CERT', default='etc/oauth/jwk.crt'),
