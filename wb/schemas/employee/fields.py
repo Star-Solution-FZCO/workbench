@@ -83,6 +83,7 @@ def get_grade(obj: 'm.Employee') -> EmployeeGradeFieldOut | None:
 
 
 def get_linked_accounts(obj: 'm.Employee') -> List[EmployeeLinkedAccountOut]:
+    curr_user = current_user()
     return [
         EmployeeLinkedAccountOut(
             source=LinkedAccountSourceOut.from_obj(acc.source),
@@ -90,6 +91,7 @@ def get_linked_accounts(obj: 'm.Employee') -> List[EmployeeLinkedAccountOut]:
             active=acc.active,
         )
         for acc in obj.linked_accounts
+        if acc.source.public or curr_user.id == obj.id
     ]
 
 
