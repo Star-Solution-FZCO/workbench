@@ -27,22 +27,27 @@ type LoginPageStateT = {
     inProgress: boolean;
 };
 
-const authLabel = () => {
-    switch (AUTH_MODE) {
-        case "ldap":
-            return <>Use your domain credentials for login.</>;
-        case "local":
-            return (
-                <>
-                    Use your WB credentials for login (
-                    <a href={"/register"}>registration</a>).
-                </>
-            );
-        case "dev":
-            return <>Use dev credentials for login.</>;
-        default:
-            return <></>;
-    }
+type AuthMode = "ldap" | "local" | "dev";
+
+interface AuthLabelProps {
+    authMode: AuthMode;
+}
+
+const authMessages: Record<AuthMode, React.ReactNode> = {
+    ldap: "Use your domain credentials for login.",
+    local: (
+        <>
+            Use your WB credentials for login (
+            <a href={"/register"}>registration</a>).
+        </>
+    ),
+    dev: "Use dev credentials for login.",
+};
+
+const AuthLabel: React.FC<AuthLabelProps> = ({ authMode }) => {
+    const content = authMessages[authMode] || "";
+
+    return <Typography variant="body2">{content}</Typography>;
 };
 
 export const LoginPage: React.FC = () => {
@@ -167,7 +172,7 @@ export const LoginPage: React.FC = () => {
                             Sign In
                         </LoadingButton>
 
-                        <Typography variant="body2">{authLabel()}</Typography>
+                        <AuthLabel authMode={AUTH_MODE}/>
                     </Box>
                 </Box>
             </Container>

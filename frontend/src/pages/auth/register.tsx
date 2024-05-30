@@ -37,6 +37,10 @@ export const RegisterPage: React.FC = () => {
     });
 
     const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (state.register_token === "" || state.password === "") {
+            toast.error("All fields are required.");
+            return;
+        }
         e.preventDefault();
         setState({ ...state, inProgress: true });
 
@@ -117,6 +121,10 @@ export const RegisterPage: React.FC = () => {
                             sx={{ mt: 3, mb: 2 }}
                             onClick={handleSubmit}
                             loading={state.inProgress}
+                            disabled={
+                                state.register_token.length === 0 ||
+                                state.password.length === 0
+                            }
                         >
                             Submit
                         </LoadingButton>
