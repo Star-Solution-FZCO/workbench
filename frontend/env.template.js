@@ -2,6 +2,7 @@
     window["env"] = window["env"] || {};
 
     window["env"]["API_BASE_URL"] = "${API_BASE_URL}";
+    window["env"]["AUTH_MODE"] = "${AUTH_MODE}";
     window["env"]["STORAGE_URL"] = "${STORAGE_URL}";
     window["env"]["SENTRY_DSN"] = "${SENTRY_DSN}";
     window["env"]["MUI_X_LICENSE_KEY"] = "${MUI_X_LICENSE_KEY}";
