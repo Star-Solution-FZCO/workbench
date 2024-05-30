@@ -5,6 +5,7 @@ import { FC } from "react";
 import {
     ApiResponse,
     CounteragentT,
+    EmployeeLinkedAccountT,
     EmployeeT,
     ListResponseT,
     TeamMemberItemT,
@@ -12,13 +13,41 @@ import {
 } from "types";
 import TeamMembers from "./team_members";
 
+const processLinkedAccounts = (metadata: any, members: EmployeeT[]) => {
+    return members.map((member) => {
+        const linkedAccounts: EmployeeLinkedAccountT[] =
+            metadata?.linked_accounts[member.id] || [];
+
+        const linkedAccountsData = linkedAccounts.reduce(
+            (acc, account) => {
+                const sourceName = account.source.name;
+                const sourceId = account.source.id;
+                acc[sourceId] = {
+                    name: sourceName,
+                    accountId: account.account_id,
+                };
+                return acc;
+            },
+            {} as Record<number, { name: string; accountId: string }>,
+        );
+
+        return {
+            ...member,
+            linkedAccounts: linkedAccountsData,
+        };
+    });
+};
+
 const combineTeamData = (
     membersData: ApiResponse<ListResponseT<EmployeeT>> | undefined,
     counteragentsData: ApiResponse<ListResponseT<CounteragentT>> | undefined,
 ): TeamMemberItemT[] => {
     const results: TeamMemberItemT[] = [];
 
-    const members = membersData?.payload?.items || [];
+    const members = processLinkedAccounts(
+        membersData?.metadata || {},
+        membersData?.payload?.items || [],
+    );
     const counteragents = counteragentsData?.payload?.items || [];
 
     members.forEach((member) => {

@@ -1310,7 +1310,6 @@ export type TeamMemberT = {
 
 export type TeamMemberItemT = TeamMemberT & {
     counteragent: boolean;
-    linkedAccounts?: Record<number, { name: string; accountId: string }>;
 };
 
 export type NewTeamTagT = {

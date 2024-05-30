@@ -3,8 +3,6 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-from wb.models.linked_accounts.accounts import LinkedAccount
-from wb.routes.v1.linked_account.schemas import LinkedAccountSourceOut
 from wb.schemas import (
     SelectEmployeeField,
     SelectField,
