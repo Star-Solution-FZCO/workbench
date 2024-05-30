@@ -359,17 +359,7 @@ async def get_team_members(
             today_schedule_status=employees_days[emp.id][today],
         )
         items.append(emp_out)
-        metadata['linked_accounts'][emp.id] = [
-            EmployeeLinkedAccountOut.from_obj(account)
-            for account in emp.linked_accounts
-        ]
-    return make_list_output(
-        count=count,
-        limit=count,
-        offset=0,
-        items=items,
-        metadata=metadata,
-    )
+    return make_list_output(count=count, limit=count, offset=0, items=items)
 
 
 @router.get('/{team_id}/counteragents')

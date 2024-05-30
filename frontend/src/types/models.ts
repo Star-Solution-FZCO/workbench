@@ -197,6 +197,7 @@ export type EmployeeT = {
     dismissal_reason?: string;
     today_schedule_status: DayT;
     pool: SelectOptionT | null;
+    linked_accounts: EmployeeLinkedAccountT[];
 };
 
 export type NewEmployeeT = {
@@ -1304,6 +1305,7 @@ export type TeamMemberT = {
     position: string;
     team_position: string;
     grade: string;
+    linked_accounts: EmployeeLinkedAccountT[];
 };
 
 export type TeamMemberItemT = TeamMemberT & {

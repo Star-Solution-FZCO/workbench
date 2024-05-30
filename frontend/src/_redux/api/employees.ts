@@ -7,7 +7,6 @@ import {
     CustomBaseQueryFn,
     EmployeeHierarchyT,
     EmployeeHistoryRecordT,
-    EmployeeLinkedAccountT,
     EmployeeSelectOptionT,
     EmployeeT,
     LinkedAccountSourceT,
@@ -589,14 +588,6 @@ export const employeesApi = createApi({
                 body,
             }),
             invalidatesTags: ["LinkedAccountSources"],
-        }),
-        listEmployeeLinkedAccount: build.query<
-            ApiResponse<EmployeeLinkedAccountT[]>,
-            number
-        >({
-            query: (id) => ({
-                url: `${apiVersion}/employee/${id}/linked-accounts`,
-            }),
         }),
     }),
 });

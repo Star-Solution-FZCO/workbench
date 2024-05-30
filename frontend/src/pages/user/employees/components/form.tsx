@@ -3,12 +3,7 @@ import { FormRow } from "_components/fields";
 import { catalogsApi, employeesApi, sharedApi } from "_redux";
 import { FC, useEffect, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import {
-    ApiResponse,
-    EmployeeLinkedAccountT,
-    EmployeeT,
-    UpdateEmployeeT,
-} from "types";
+import { ApiResponse, EmployeeT, UpdateEmployeeT } from "types";
 import { checkFieldCanBeEdited } from "utils";
 import DatePickerField from "./datepicker_field";
 import EmployeeListField from "./employee_list";
@@ -24,8 +19,7 @@ import WorkChatListField from "./work_chat_list_field";
 
 const EmployeeForm: FC<{
     data: ApiResponse<EmployeeT>;
-    linkedAccounts: EmployeeLinkedAccountT[];
-}> = ({ data: responseData, linkedAccounts }) => {
+}> = ({ data: responseData }) => {
     const { metadata, payload: data } = responseData;
 
     const [editMode, setEditMode] = useState({
@@ -348,11 +342,13 @@ const EmployeeForm: FC<{
                         />
                     )}
 
-                    {linkedAccounts.length > 0 && (
+                    {data.linked_accounts.length > 0 && (
                         <>
                             <Divider sx={{ mb: 0.5 }} flexItem />
 
-                            <EmployeeLinkedAccounts accounts={linkedAccounts} />
+                            <EmployeeLinkedAccounts
+                                accounts={data.linked_accounts}
+                            />
                         </>
                     )}
                 </Box>
