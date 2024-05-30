@@ -2,6 +2,7 @@ import { ProfileModelT } from "types/models";
 import {
     removeAuthorizationInfo,
     requestRefreshToken,
+    sendRegistrationRequest,
     setProfileInfo,
 } from "../utils";
 
@@ -20,7 +21,14 @@ const login = (
 
 const logout = () => removeAuthorizationInfo();
 
+const register = (
+    register_token: string,
+    password: string,
+): Promise<{ success: boolean }> =>
+    sendRegistrationRequest(register_token, password);
+
 export const authService = {
     login,
     logout,
+    register,
 };

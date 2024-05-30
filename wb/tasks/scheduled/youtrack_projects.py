@@ -2,7 +2,7 @@ import asyncio
 import json
 from typing import Any, Dict, List
 from urllib.error import HTTPError
-from urllib.parse import quote
+from urllib.parse import quote, urljoin
 from urllib.request import Request, urlopen
 
 import sqlalchemy as sa
@@ -15,15 +15,12 @@ from wb.db import multithreading_safe_async_session
 __all__ = ('task_sync_youtrack_projects',)
 
 
-YOUTRACK_URL = CONFIG.YOUTRACK_URL
-YOUTRACK_API_TOKEN = CONFIG.YOUTRACK_API_TOKEN
-
-
 def _send_youtrack_request(url: str, method: str = 'GET') -> Any:
-    headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-    if YOUTRACK_API_TOKEN:
-        headers['Authorization'] = f'Bearer {YOUTRACK_API_TOKEN}'
-    url = f'{YOUTRACK_URL}{url}'
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {CONFIG.YOUTRACK_API_TOKEN}',
+    }
     req = Request(url, headers=headers, method=method.upper())
     try:
         with urlopen(req) as response:
@@ -58,13 +55,13 @@ async def _update_projects(projects: Dict[str, List[str]]) -> None:
 
 @celery_app.task(name='sync_youtrack_projects')
 def task_sync_youtrack_projects() -> None:
-    if not YOUTRACK_URL:
+    if not CONFIG.YOUTRACK_URL:
         return
     print('start sync youtrack projects')
     query = 'Assignee: -Unassigned resolved date: {minus 90d} .. Today'
     fields = ['id', 'project(name)', 'customFields(name,value(login,email))']
     url = f'/api/issues?query={quote(query)}&fields={",".join(fields)}'
-    issues = _send_youtrack_request(url, method='GET')
+    issues = _send_youtrack_request(urljoin(CONFIG.YOUTRACK_URL, url), method='GET')
     employees: Dict[str, Dict[str, Any]] = {}
     projects_per_email: Dict[str, List[str]] = {}
     for issue in issues:

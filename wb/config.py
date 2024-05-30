@@ -11,8 +11,6 @@ __all__ = (
     'CONFIG',
     'API_KEYS',
     'AuthModeT',
-    'TM_CLIENT_VERSION',
-    'TM_CLIENT_DIR',
 )
 
 
@@ -77,14 +75,16 @@ CONFIG = Dynaconf(
         ),
         Validator('DB_URI', default='postgresql+asyncpg://me:me@127.0.0.1:5432/me'),
         Validator('DB_ENCRYPT_KEY', required=True),
-        Validator('LDAP_URI', 'LDAP_BASE_DN', cast=str, default=''),
-        Validator('LDAP_USER_DEFAULT_DOMAIN', cast=str, default=''),
         Validator(
-            'LDAP_SEARCH_QUERY',
-            default='(&(objectCategory=person)(objectClass=User)(!(userAccountControl=512))(!(userAccountControl=66050))(|(sAMAccountName=%(login)s)('
-            'mail=%(login)s)))',
-            cast=str,
-            required=True,
+            'LDAP_URI',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('AUTH_MODE', condition=lambda v: v == AuthModeT.LDAP),
+        ),
+        Validator(
+            'LDAP_USER_DEFAULT_DOMAIN',
+            is_type_of=str,
+            default='',
         ),
         Validator(
             'REFRESH_TOKEN_NON_REMEMBER_EXPIRES',
@@ -105,11 +105,24 @@ CONFIG = Dynaconf(
         Validator('BBOT_API_URL', 'BBOT_API_TOKEN', cast=str),
         Validator('CELERY_BROKER_URL', cast=str, default='redis://localhost:6379'),
         Validator('REDIS_URL', cast=str, default='redis://localhost:6379'),
+        Validator('YOUTRACK_URL', is_type_of=str, default=''),
         Validator(
-            'YOUTRACK_URL', 'YOUTRACK_API_TOKEN', 'YOUTRACK_SCOPE', cast=str, default=''
+            'YOUTRACK_API_TOKEN',
+            must_exist=True,
+            is_type_of=str,
+            when=Validator('YOUTRACK_URL', condition=bool),
         ),
         Validator(
-            'YOUTRACK_USER_TOKEN_PREFIX', cast=str, default='wb-help-center-access'
+            'YOUTRACK_SCOPE',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('YOUTRACK_URL', condition=bool),
+        ),
+        Validator(
+            'YOUTRACK_USER_TOKEN_PREFIX',
+            is_type_of=str,
+            default='wb-help-center-access',
+            when=Validator('YOUTRACK_URL', condition=bool),
         ),
         Validator(
             'S3_ACCESS_KEY',
@@ -130,16 +143,22 @@ CONFIG = Dynaconf(
             'ACTIVITY_REPORTS_EMAIL', cast=str, default='activity@localhost.localdomain'
         ),
         Validator('PRESENCE_BOT_PARARAM_KEY', cast=str, default=''),
-        Validator('CONFLUENCE_URL', cast=str, default=''),
-        Validator('CONFLUENCE_API_TOKEN', cast=str, default=''),
-        Validator('CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID', cast=str, default=''),
+        Validator('CONFLUENCE_URL', is_type_of=str, default=''),
+        Validator(
+            'CONFLUENCE_API_TOKEN',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CONFLUENCE_URL', condition=bool),
+        ),
+        Validator(
+            'CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID',
+            is_type_of=str,
+            default='',
+            when=Validator('CONFLUENCE_URL', condition=bool),
+        ),
         Validator('EMAIL_DOMAIN_WHITELIST', default=['localhost']),
         Validator('OAUTH_JWK_PRIVATE_KEY', default='etc/oauth/jwk.key'),
         Validator('OAUTH_JWK_PUBLIC_CERT', default='etc/oauth/jwk.crt'),
-        Validator(
-            'GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_PATH',
-            default='etc/google/credentials.json',
-        ),
         Validator('OTP_DIGITS', cast=int, default=6),
         Validator('OTP_PERIOD', cast=int, default=30),
         Validator('OTP_DIGEST', cast=str, default='sha1'),
@@ -152,11 +171,31 @@ CONFIG = Dynaconf(
             cast=str,
             default='etc/credentials/cm-auth.pem',
         ),
+        Validator('CALDAV_URL', is_type_of=str, default=''),
         Validator(
-            'CALDAV_URL', 'CALDAV_USERNAME', 'CALDAV_PASSWORD', cast=str, default=''
+            'CALDAV_USERNAME',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CALDAV_URL', condition=bool),
         ),
-        Validator('TM_CLIENT_VERSION', cast=int, required=True),
-        Validator('TM_CLIENT_DIR', default='/data/tm'),
+        Validator(
+            'CALDAV_PASSWORD',
+            is_type_of=str,
+            must_exist=True,
+            when=Validator('CALDAV_URL', condition=bool),
+        ),
+        Validator('TM_CLIENT_ENABLE', cast=bool, default=True),
+        Validator(
+            'TM_CLIENT_VERSION',
+            cast=int,
+            must_exist=True,
+            when=Validator('TM_CLIENT_ENABLE', condition=bool),
+        ),
+        Validator(
+            'TM_CLIENT_DIR',
+            default='/data/tm',
+            when=Validator('TM_CLIENT_ENABLE', condition=bool),
+        ),
     ],
 )
 CONFIG.configure()
@@ -165,6 +204,3 @@ API_KEYS = parse_api_keys(CONFIG.api_keys)
 if CONFIG.DEV_MODE:
     CONFIG.SEND_NOTIFICATION_TO_CONSOLE = True
     CONFIG.AUTH_MODE = AuthModeT.DEV
-
-TM_CLIENT_VERSION = CONFIG.TM_CLIENT_VERSION
-TM_CLIENT_DIR = CONFIG.TM_CLIENT_DIR

@@ -23,7 +23,7 @@ from wb.schemas import (
     ListFilterParams,
     SuccessPayloadOutput,
 )
-from wb.services.calendar import CalDAVClient
+from wb.services.calendar import CalDAVClient, get_calendar_client
 from wb.services.employee import check_similar_usernames
 from wb.services.youtrack.utils import YoutrackException
 from wb.services.youtrack.youtrack import YoutrackProcessor
@@ -64,7 +64,7 @@ def create_datetime(dt: datetime, time: str) -> datetime:
 async def validate_add_employee_request_data(
     onboarding_data: OnboardingData,
     settings: m.EmployeeRequestSettings,
-    calendar: CalDAVClient,
+    calendar: CalDAVClient | None,
 ) -> None:
     now = datetime.now(timezone.utc)
     if onboarding_data.start < now or onboarding_data.end < now:
@@ -92,6 +92,8 @@ async def validate_add_employee_request_data(
             HTTPStatus.BAD_REQUEST,
             detail='Onboarding time outside of working hours',
         )
+    if not calendar:
+        return
     events: list[caldav.Event] = []
     for calendar_id in settings.calendar_ids:
         events.extend(
@@ -194,7 +196,7 @@ async def get_add_employee_request(
 async def create_add_employee_request(  # pylint: disable=too-many-locals, too-many-branches, too-many-statements
     body: AddEmployeeRequestCreate,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -238,14 +240,6 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         approved_by_hr_id=curr_user.id if auto_approved else None,
     )
     session.add(obj)
-    if CONFIG.DEV_MODE:
-        employee_data_as_dict = employee_data.dict()
-        employee_data_as_dict['work_started'] = employee_data.work_started.strftime(
-            '%Y-%m-%d'
-        )
-        obj.employee_data = employee_data_as_dict
-        await session.commit()
-        return make_id_output(obj.id)
     await validate_add_employee_request_data(
         onboarding_data=onboarding_data,
         settings=settings,
@@ -259,44 +253,49 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         else (settings.content or '')
     )
     events: list[caldav.Event] = []
-    for calendar_id in settings.calendar_ids:
-        event = calendar.create_event(
-            start=onboarding_data.start,
-            end=onboarding_data.end,
-            calendar_id=calendar_id,
-            summary=base_summary + ' onboarding',
-            description=description,
-        )
-        events.append(event)
-    youtrack_processor = YoutrackProcessor(session=session)
+    if calendar:
+        for calendar_id in settings.calendar_ids:
+            event = calendar.create_event(
+                start=onboarding_data.start,
+                end=onboarding_data.end,
+                calendar_id=calendar_id,
+                summary=base_summary + ' onboarding',
+                description=description,
+            )
+            events.append(event)
     link_to_request = f'[View request in Workbench]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{obj.id})'
     calendar_links = '\n'.join(
         f'[Calendar event]({str(event.url)})' for event in events
     )
-    issue_description = '\n'.join(
-        [link_to_request, calendar_links, onboarding_data.description]
-    )
-    target_project = next(
-        (project for project in settings.youtrack_projects if project['main']),
-        None,
-    )
-    if not target_project:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            detail='No target YouTrack project in settings. Customize projects in request settings',
+    issue = None
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        issue_description = '\n'.join(
+            [link_to_request, calendar_links, onboarding_data.description]
         )
-    try:
-        issue = await youtrack_processor.create_issue(
-            user=curr_user,
-            project_short_name=target_project['short_name'],
-            fields=['id', 'idReadable'],
-            summary=base_summary
-            + f' - Start date: {employee_data.work_started.strftime("%d/%m/%Y")}',
-            description=issue_description,
-            markdown=True,
+        target_project = next(
+            (project for project in settings.youtrack_projects if project['main']),
+            None,
         )
-    except YoutrackException as err:
-        raise HTTPException(HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(err)) from err
+        if not target_project:
+            raise HTTPException(
+                HTTPStatus.CONFLICT,
+                detail='No target YouTrack project in settings. Customize projects in request settings',
+            )
+        try:
+            issue = await youtrack_processor.create_issue(
+                user=curr_user,
+                project_short_name=target_project['short_name'],
+                fields=['id', 'idReadable'],
+                summary=base_summary
+                + f' - Start date: {employee_data.work_started.strftime("%d/%m/%Y")}',
+                description=issue_description,
+                markdown=True,
+            )
+        except YoutrackException as err:
+            raise HTTPException(
+                HTTPStatus.INTERNAL_SERVER_ERROR, detail=str(err)
+            ) from err
     employee_data_as_dict = employee_data.dict()
     onboarding_data_as_dict = onboarding_data.dict()
     employee_data_as_dict['work_started'] = employee_data.work_started.strftime(
@@ -308,7 +307,9 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
         {'id': event.vobject_instance.vevent.uid.value, 'link': str(event.url)}
         for event in events
     ]
-    onboarding_data_as_dict['youtrack_issue_id'] = issue['idReadable']
+    onboarding_data_as_dict['youtrack_issue_id'] = (
+        issue['idReadable'] if issue else None
+    )
     obj.employee_data = employee_data_as_dict
     obj.onboarding_data = json.dumps(onboarding_data_as_dict)
     await session.commit()
@@ -330,7 +331,7 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
     request_id: int,
     body: AddEmployeeRequestUpdate,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -363,19 +364,6 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
             detail=f'Username {employee_data["account"]} is similar to {similar_username}',
         )
     request_onboarding_data = json.loads(request.onboarding_data)
-    if CONFIG.DEV_MODE:
-        employee_data['work_started'] = employee_data['work_started'].strftime(
-            '%Y-%m-%d'
-        )
-        request.employee_data = employee_data
-        onboarding_data['start'] = onboarding_data['start'].isoformat()
-        onboarding_data['end'] = onboarding_data['end'].isoformat()
-        onboarding_data['calendar_events'] = request_onboarding_data.get(
-            'calendar_events', []
-        )
-        request.onboarding_data = json.dumps(onboarding_data)
-        await session.commit()
-        return make_id_output(request.id)
     onboarding_data['start'] = onboarding_data['start'].isoformat()
     onboarding_data['end'] = onboarding_data['end'].isoformat()
     onboarding_data['calendar_events'] = request_onboarding_data.get(
@@ -394,35 +382,37 @@ async def update_add_employee_request(  # pylint: disable=too-many-locals, too-m
         if body.onboarding_data.description
         else (settings.content or '')
     )
-    for event in request_onboarding_data.get('calendar_events', []):
-        calendar.update_event(
-            uid=event['id'],
-            start=body.onboarding_data.start,
-            end=body.onboarding_data.end,
-            summary=base_summary + ' onboarding',
-            description=description,
+    if calendar:
+        for event in request_onboarding_data.get('calendar_events', []):
+            calendar.update_event(
+                uid=event['id'],
+                start=body.onboarding_data.start,
+                end=body.onboarding_data.end,
+                summary=base_summary + ' onboarding',
+                description=description,
+            )
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        target_project = next(
+            project for project in settings.youtrack_projects if project['main']
         )
-    youtrack_processor = YoutrackProcessor(session=session)
-    target_project = next(
-        project for project in settings.youtrack_projects if project['main']
-    )
-    if not target_project:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            detail='No target YouTrack project in settings. Customize projects in request settings',
+        if not target_project:
+            raise HTTPException(
+                HTTPStatus.CONFLICT,
+                detail='No target YouTrack project in settings. Customize projects in request settings',
+            )
+        await youtrack_processor.update_issue(
+            issue_id=request_onboarding_data['youtrack_issue_id'],
+            user=curr_user,
+            project_short_name=target_project['short_name'],
+            summary=base_summary
+            + f' - Start date: {employee_data["work_started"].strftime("%d/%m/%Y")}',
         )
-    await youtrack_processor.update_issue(
-        issue_id=request_onboarding_data['youtrack_issue_id'],
-        user=curr_user,
-        project_short_name=target_project['short_name'],
-        summary=base_summary
-        + f' - Start date: {employee_data["work_started"].strftime("%d/%m/%Y")}',
-    )
-    await youtrack_processor.create_issue_comment(
-        issue_id=request_onboarding_data['youtrack_issue_id'],
-        user=curr_user,
-        text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
-    )
+        await youtrack_processor.create_issue_comment(
+            issue_id=request_onboarding_data['youtrack_issue_id'],
+            user=curr_user,
+            text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
+        )
     request.onboarding_data = json.dumps(onboarding_data)
     employee_data['work_started'] = employee_data['work_started'].strftime('%Y-%m-%d')
     request.employee_data = employee_data
@@ -497,8 +487,6 @@ async def approve_add_employee_request(  # pylint: disable=too-many-branches, to
             await session.commit()
         except IntegrityError as err:
             raise HTTPException(HTTPStatus.CONFLICT, detail='duplicate') from err
-    if CONFIG.DEV_MODE:
-        return make_id_output(request.id)
     settings: m.EmployeeRequestSettings | None = await session.scalar(
         sa.select(m.EmployeeRequestSettings)
     )
@@ -514,7 +502,7 @@ async def approve_add_employee_request(  # pylint: disable=too-many-branches, to
 async def cancel_add_employee_request(
     request_id: int,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(CalDAVClient),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
@@ -534,15 +522,14 @@ async def cancel_add_employee_request(
     request.status = 'CANCELED'
     request.updated = datetime.utcnow()
     await session.commit()
-    if CONFIG.DEV_MODE:
-        return make_id_output(request.id)
     settings: m.EmployeeRequestSettings | None = await session.scalar(
         sa.select(m.EmployeeRequestSettings)
     )
     if not settings:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Settings not found')
-    for event in onboarding_data_as_dict.get('calendar_events', []):
-        calendar.delete_event(uid=event['id'])
+    if calendar:
+        for event in onboarding_data_as_dict.get('calendar_events', []):
+            calendar.delete_event(uid=event['id'])
     employee_data = request.employee_data
     request_link = f'[{employee_data["english_name"]}]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{request.id})'
     msg = f'Request to add employee {request_link} was cancelled. {request.created_by.link_pararam}'

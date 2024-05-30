@@ -1,11 +1,14 @@
 from http import HTTPStatus
 
+import jwt
+import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from starsol_fastapi_jwt_auth import AuthJWT
 
-from wb.config import CONFIG
+import wb.models as m
+from wb.config import CONFIG, AuthModeT
 from wb.db import get_db_session
 from wb.schemas import SuccessOutput, SuccessPayloadOutput, UserAuth, UserProfile
 from wb.services.auth import AuthException, get_auth_func, store_user
@@ -19,6 +22,11 @@ router = APIRouter(prefix='/api/auth', tags=['auth'])
 
 class AuthPayload(BaseModel):
     profile: UserProfile
+
+
+class RegisterForm(BaseModel):
+    register_token: str
+    password: str = Field(..., min_length=11)
 
 
 @router.post('/login')
@@ -82,4 +90,40 @@ async def refresh(auth: AuthJWT = Depends()) -> SuccessOutput:
 async def logout(auth: AuthJWT = Depends()) -> SuccessOutput:
     auth.jwt_required()
     auth.unset_jwt_cookies()
+    return SuccessOutput()
+
+
+@router.post('/register')
+async def register(
+    form: RegisterForm,
+    session: AsyncSession = Depends(get_db_session),
+) -> SuccessOutput:
+    if CONFIG.AUTH_MODE != AuthModeT.LOCAL:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
+        )
+    try:
+        data = jwt.decode(form.register_token, CONFIG.JWT_SECRET, algorithms=['HS256'])
+    except jwt.PyJWTError as err:
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid token') from err
+    if not (emp_id := data.get('employee_id')) or not isinstance(emp_id, int):
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Invalid token')
+    emp = await session.scalar(
+        sa.select(m.Employee).where(
+            m.Employee.id == emp_id, m.Employee.active.is_(True)
+        )
+    )
+    if not emp:
+        raise HTTPException(
+            HTTPStatus.NOT_FOUND, detail='Active employee record not found'
+        )
+    if await session.scalar(sa.select(m.User).where(m.User.username == emp.account)):
+        raise HTTPException(HTTPStatus.CONFLICT, detail='User already exists')
+    user = m.User(
+        username=emp.account,
+        password_hash=m.User.hash_password(form.password),
+        active=emp.active,
+    )
+    session.add(user)
+    await session.commit()
     return SuccessOutput()

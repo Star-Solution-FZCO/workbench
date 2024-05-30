@@ -40,8 +40,6 @@ router = APIRouter(
     prefix='/api/v1/request/dismiss-employee', tags=['v1', 'dismiss-employee-request']
 )
 
-CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID = CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
-
 
 @router.get('/list')
 async def list_dismiss_employee_requests(
@@ -134,58 +132,61 @@ async def create_dismiss_employee_request(  # pylint: disable=too-many-locals
     )
     session.add(request)
     await session.flush()
-    youtrack_processor = YoutrackProcessor(session=session)
     link_to_request = f'[View request in Workbench]({CONFIG.PUBLIC_BASE_URL}/requests/dismiss-employee/{request.id})'
-    article_content = await confluence_api.get_page_content(
-        CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
-    )
-    article_markdown = (
-        confluence_xml_converter.to_markdown(article_content)
-        if article_content
-        else None
-    )
-    main_project = next(
-        (project for project in settings.youtrack_projects if project['main']), None
-    )
-    if not main_project:
-        raise HTTPException(
-            HTTPStatus.CONFLICT,
-            detail='No main project in the settings. Set the main project flag in the employee request settings',
-        )
-    main_issue = await youtrack_processor.create_issue(
-        user=curr_user,
-        project_short_name=main_project['short_name'],
-        summary=f'Offboard employee {employee.english_name} - Dismiss datetime: {body.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
-        description=link_to_request,
-        markdown=True,
-        fields=['id', 'idReadable'],
-    )
-    request.youtrack_issue_id = main_issue['idReadable']
-    if article_markdown:
-        await youtrack_processor.create_issue_comment(
-            user=curr_user,
-            issue_id=main_issue['idReadable'],
-            text='### Checklist\n' + article_markdown,
-        )
-    secondary_issues = await asyncio.gather(
-        *[
-            youtrack_processor.create_issue(
-                user=curr_user,
-                project_short_name=project['short_name'],
-                summary=f'Offboard employee {employee.english_name} - Dismiss datetime: {body.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
-                tags=project['tags'],
-                markdown=True,
-                fields=['id', 'idReadable'],
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        article_content = None
+        if confluence_api and CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID:
+            article_content = await confluence_api.get_page_content(
+                CONFIG.CONFLUENCE_OFFBOARD_ARTICLE_PAGE_ID
             )
-            for project in settings.youtrack_projects
-            if not project['main']
-        ],
-    )
-    await youtrack_processor.apply_command(
-        user=curr_user,
-        issue_ids=[issue['idReadable'] for issue in secondary_issues],
-        query=f'subtask of {main_issue["idReadable"]}',
-    )
+        article_markdown = (
+            confluence_xml_converter.to_markdown(article_content)
+            if article_content
+            else None
+        )
+        main_project = next(
+            (project for project in settings.youtrack_projects if project['main']), None
+        )
+        if not main_project:
+            raise HTTPException(
+                HTTPStatus.CONFLICT,
+                detail='No main project in the settings. Set the main project flag in the employee request settings',
+            )
+        main_issue = await youtrack_processor.create_issue(
+            user=curr_user,
+            project_short_name=main_project['short_name'],
+            summary=f'Offboard employee {employee.english_name} - Dismiss datetime: {body.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
+            description=link_to_request,
+            markdown=True,
+            fields=['id', 'idReadable'],
+        )
+        request.youtrack_issue_id = main_issue['idReadable']
+        if article_markdown:
+            await youtrack_processor.create_issue_comment(
+                user=curr_user,
+                issue_id=main_issue['idReadable'],
+                text='### Checklist\n' + article_markdown,
+            )
+        secondary_issues = await asyncio.gather(
+            *[
+                youtrack_processor.create_issue(
+                    user=curr_user,
+                    project_short_name=project['short_name'],
+                    summary=f'Offboard employee {employee.english_name} - Dismiss datetime: {body.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
+                    tags=project['tags'],
+                    markdown=True,
+                    fields=['id', 'idReadable'],
+                )
+                for project in settings.youtrack_projects
+                if not project['main']
+            ],
+        )
+        await youtrack_processor.apply_command(
+            user=curr_user,
+            issue_ids=[issue['idReadable'] for issue in secondary_issues],
+            query=f'subtask of {main_issue["idReadable"]}',
+        )
     try:
         await session.commit()
     except IntegrityError as err:
@@ -244,35 +245,40 @@ async def update_dismiss_employee_request(  # pylint: disable=too-many-locals
         data.pop('dismiss_datetime')
     for k, v in data.items():
         setattr(request, k, v)
-    youtrack_processor = YoutrackProcessor(session=session)
-    issue = await youtrack_processor.get_issue(
-        user=curr_user,
-        issue_id=request.youtrack_issue_id,
-        fields=['idReadable', 'links(linkType,issues(idReadable,project(shortName)))'],
-    )
-    await youtrack_processor.update_issue(
-        user=curr_user,
-        issue_id=request.youtrack_issue_id,
-        project_short_name=target_project['short_name'],
-        summary=f'Offboard employee {request.employee.english_name} - Dismiss datetime: {request.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
-    )
-    await youtrack_processor.create_issue_comment(
-        user=curr_user,
-        issue_id=request.youtrack_issue_id,
-        text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
-    )
-    linked_issues = [item for link in issue['links'] for item in link['issues']]
-    await asyncio.gather(
-        *[
-            youtrack_processor.update_issue(
-                user=curr_user,
-                issue_id=issue['idReadable'],
-                project_short_name=issue['project']['shortName'],
-                summary=f'Offboard employee {request.employee.english_name} - Dismiss datetime: {request.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
-            )
-            for issue in linked_issues
-        ]
-    )
+    if CONFIG.YOUTRACK_URL:
+        youtrack_processor = YoutrackProcessor(session=session)
+        issue = await youtrack_processor.get_issue(
+            user=curr_user,
+            issue_id=request.youtrack_issue_id,
+            fields=[
+                'idReadable',
+                'links(linkType,issues(idReadable,project(shortName)))',
+            ],
+        )
+        await youtrack_processor.update_issue(
+            user=curr_user,
+            issue_id=request.youtrack_issue_id,
+            project_short_name=target_project['short_name'],
+            summary=f'Offboard employee {request.employee.english_name} - Dismiss datetime: {request.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
+        )
+        await youtrack_processor.create_issue_comment(
+            user=curr_user,
+            issue_id=request.youtrack_issue_id,
+            text=f'Request updated by {curr_user.link_pararam}\n{request.link}',
+        )
+        linked_issues = [item for link in issue['links'] for item in link['issues']]
+        await asyncio.gather(
+            *[
+                youtrack_processor.update_issue(
+                    user=curr_user,
+                    issue_id=issue['idReadable'],
+                    project_short_name=issue['project']['shortName'],
+                    summary=f'Offboard employee {request.employee.english_name} - '
+                    f'Dismiss datetime: {request.dismiss_datetime.strftime("%d/%m/%Y %H:%M GMT+0")}',
+                )
+                for issue in linked_issues
+            ]
+        )
     request.updated = datetime.utcnow()
     if session.is_modified(request):
         try:

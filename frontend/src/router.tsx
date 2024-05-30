@@ -6,7 +6,7 @@ import {
     useRouteError,
 } from "react-router-dom";
 import { loginPageUrl } from "./config";
-import { AuthPrivateRoute, LoginPage } from "./pages";
+import { AuthPrivateRoute, LoginPage, RegisterPage } from "./pages";
 import JSONGenerator from "./pages/json_editor";
 import PasswordGenerator from "./pages/password_generator";
 import { UserRouter } from "./pages/user";
@@ -27,6 +27,7 @@ const router = createBrowserRouter(
             {/* Auth routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/logout" element={<Navigate to={loginPageUrl} />} />
+            <Route path="/register" element={<RegisterPage />} />
 
             <Route path="/password-generator" element={<PasswordGenerator />} />
             <Route path="/json-editor" element={<JSONGenerator />} />

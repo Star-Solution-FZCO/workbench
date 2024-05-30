@@ -3,88 +3,60 @@ import { LoadingButton } from "@mui/lab";
 import {
     Avatar,
     Box,
-    Checkbox,
     Container,
     CssBaseline,
-    FormControlLabel,
     TextField,
     ThemeProvider,
     Typography,
 } from "@mui/material";
 import { Title } from "_components";
-import { authActions, profileLoaded, useAppDispatch } from "_redux";
+import { authActions } from "_redux";
 import { AUTH_MODE } from "config";
 import React, { useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { theme } from "theme";
-import { ProfileModelT } from "types/models";
 
 type LoginPageStateT = {
-    username: string;
+    register_token: string;
     password: string;
-    remember: boolean;
     inProgress: boolean;
 };
 
-type AuthMode = "ldap" | "local" | "dev";
+export const RegisterPage: React.FC = () => {
+    if (AUTH_MODE !== "local") {
+        return <Typography>Registration is disabled.</Typography>;
+    }
 
-interface AuthLabelProps {
-    authMode: AuthMode;
-}
-
-const authMessages: Record<AuthMode, React.ReactNode> = {
-    ldap: "Use your domain credentials for login.",
-    local: (
-        <>
-            Use your WB credentials for login (
-            <a href={"/register"}>registration</a>).
-        </>
-    ),
-    dev: "Use dev credentials for login.",
-};
-
-const AuthLabel: React.FC<AuthLabelProps> = ({ authMode }) => {
-    const content = authMessages[authMode] || "";
-
-    return <Typography variant="body2">{content}</Typography>;
-};
-
-export const LoginPage: React.FC = () => {
     const navigate = useNavigate();
-    const dispatch = useAppDispatch();
-    const [searchParams] = useSearchParams();
 
     const [state, setState] = useState<LoginPageStateT>({
-        username: "",
+        register_token: "",
         password: "",
-        remember: false,
         inProgress: false,
     });
 
     const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
+        if (state.register_token === "" || state.password === "") {
+            toast.error("All fields are required.");
+            return;
+        }
         e.preventDefault();
         setState({ ...state, inProgress: true });
 
-        const handleSuccessLogin = (data: ProfileModelT) => {
-            dispatch(profileLoaded(data));
-
+        const handleSuccessSubmit = () => {
             setState({ ...state, inProgress: false });
-
-            if (searchParams.get("redirectTo"))
-                navigate(`${searchParams.get("redirectTo")}`);
-            else navigate("/");
+            navigate("/login");
         };
 
-        const handleErrorLogin = (response: any) => {
+        const handleErrorSubmit = (response: any) => {
             setState({ ...state, inProgress: false });
             toast.error(response.detail || response.message);
         };
 
-        authActions.login(handleSuccessLogin, handleErrorLogin)(
-            state.username,
+        authActions.register(handleSuccessSubmit, handleErrorSubmit)(
+            state.register_token,
             state.password,
-            state.remember,
         );
     };
 
@@ -94,15 +66,9 @@ export const LoginPage: React.FC = () => {
         setState({ ...state, ...{ [name]: value } });
     };
 
-    const handleCheckBoxChange = ({
-        target: { value, checked },
-    }: React.ChangeEvent<HTMLInputElement>) => {
-        setState({ ...state, ...{ [value]: checked } });
-    };
-
     return (
         <ThemeProvider theme={theme}>
-            <Title title="Login" />
+            <Title title="Registration" />
 
             <Container component="main" maxWidth="xs">
                 <CssBaseline />
@@ -119,7 +85,7 @@ export const LoginPage: React.FC = () => {
                     </Avatar>
 
                     <Typography component="h1" variant="h5">
-                        Sign in
+                        Registration
                     </Typography>
 
                     <Box component="form" noValidate sx={{ mt: 1 }}>
@@ -127,14 +93,12 @@ export const LoginPage: React.FC = () => {
                             margin="normal"
                             required
                             fullWidth
-                            id="username"
-                            label="Username"
-                            name="username"
-                            autoComplete="username"
+                            id="register_token"
+                            label="Registration token"
+                            name="register_token"
                             autoFocus
                             variant="standard"
                             onChange={handleChange}
-                            value={state.username}
                         />
                         <TextField
                             margin="normal"
@@ -149,17 +113,6 @@ export const LoginPage: React.FC = () => {
                             onChange={handleChange}
                             value={state.password}
                         />
-                        <FormControlLabel
-                            control={
-                                <Checkbox
-                                    value="remember"
-                                    color="primary"
-                                    checked={state.remember}
-                                    onChange={handleCheckBoxChange}
-                                />
-                            }
-                            label="Remember me"
-                        />
 
                         <LoadingButton
                             type="submit"
@@ -168,11 +121,17 @@ export const LoginPage: React.FC = () => {
                             sx={{ mt: 3, mb: 2 }}
                             onClick={handleSubmit}
                             loading={state.inProgress}
+                            disabled={
+                                state.register_token.length === 0 ||
+                                state.password.length === 0
+                            }
                         >
-                            Sign In
+                            Submit
                         </LoadingButton>
 
-                        <AuthLabel authMode={AUTH_MODE}/>
+                        <Typography variant="body2">
+                            <a href={"/login"}>Login</a>
+                        </Typography>
                     </Box>
                 </Box>
             </Container>

@@ -12,15 +12,18 @@ from caldav.objects import Calendar, Event
 from wb.config import CONFIG
 from wb.log import log
 
-__all__ = ('GoogleCalendar', 'CalDAVClient')
+__all__ = (
+    'GoogleCalendar',
+    'CalDAVClient',
+    'get_calendar_client',
+)
 
 
 class GoogleCalendar:
-    __credentials_path = CONFIG.GOOGLE_SERVICE_ACCOUNT_CREDENTIALS_PATH
     scopes = ['https://www.googleapis.com/auth/calendar']
 
-    def __init__(self) -> None:
-        with open(self.__credentials_path, encoding='utf-8') as creds_file:
+    def __init__(self, creds_path: str) -> None:
+        with open(creds_path, encoding='utf-8') as creds_file:
             service_account_key = json.load(creds_file)
             self.credentials = ServiceAccountCreds(
                 scopes=self.scopes, **service_account_key
@@ -132,14 +135,8 @@ class GoogleCalendar:
 
 
 class CalDAVClient:
-    url = CONFIG.CALDAV_URL
-    username = CONFIG.CALDAV_USERNAME
-    password = CONFIG.CALDAV_PASSWORD
-
-    def __init__(self) -> None:
-        self.client = caldav.DAVClient(
-            self.url, username=self.username, password=self.password
-        )
+    def __init__(self, url: str, username: str, password: str) -> None:
+        self.client = caldav.DAVClient(url, username=username, password=password)
         self.principal = self.client.principal()
 
     def get_calendar(self, calendar_id: str) -> Calendar | None:
@@ -229,3 +226,13 @@ class CalDAVClient:
             event.delete()
             return True
         return False
+
+
+def get_calendar_client() -> CalDAVClient | None:
+    if not CONFIG.CALDAV_URL:
+        return None
+    return CalDAVClient(
+        url=CONFIG.CALDAV_URL,
+        username=CONFIG.CALDAV_USERNAME,
+        password=CONFIG.CALDAV_PASSWORD,
+    )

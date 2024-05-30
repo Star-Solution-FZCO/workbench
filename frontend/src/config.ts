@@ -160,6 +160,8 @@ export const OFFBOARD_CHECKLIST_URL =
 export const CREDENTIALS_SERVICE_URL =
     (window as any)?.env?.CREDENTIALS_SERVICE_URL ||
     import.meta.env.VITE_CREDENTIALS_SERVICE_URL;
+export const AUTH_MODE =
+    (window as any)?.env?.AUTH_MODE || import.meta.env.VITE_AUTH_MODE || "ldap";
 
 export const excludedStorageKeysFromClear = [
     "doesNotShowNewReleaseDialogAgain",

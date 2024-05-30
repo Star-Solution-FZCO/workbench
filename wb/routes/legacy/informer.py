@@ -5,7 +5,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared_utils.file import async_iter_file
-from wb.config import TM_CLIENT_DIR, TM_CLIENT_VERSION
+from wb.config import CONFIG
 from wb.db import get_db_session
 
 from ._base import HEADERS, auth_tm_user
@@ -56,7 +56,7 @@ async def informer(
     if todo == 'checkVersion':
         try:
             version = int(body.get('version'))  # type: ignore
-            if version < TM_CLIENT_VERSION:
+            if version < CONFIG.TM_CLIENT_VERSION:
                 return Response(
                     b'old',
                     headers=HEADERS,
@@ -68,7 +68,7 @@ async def informer(
         except (TypeError, ValueError):
             pass
     if todo == 'getVersion':
-        tm_file_path = os.path.join(TM_CLIENT_DIR, TM_FILE_NAME)
+        tm_file_path = os.path.join(CONFIG.TM_CLIENT_DIR, TM_FILE_NAME)
         if not os.path.exists(tm_file_path):
             return Response(
                 b'No installer found!',

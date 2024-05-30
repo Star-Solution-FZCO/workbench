@@ -1,20 +1,22 @@
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import EditIcon from "@mui/icons-material/Edit";
+import KeyIcon from "@mui/icons-material/Key";
 import SourceIcon from "@mui/icons-material/Source";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Badge, Box, IconButton, Tooltip, Typography } from "@mui/material";
-import { AvatarField, Modal } from "_components";
+import { AvatarField, Clipboard, Modal } from "_components";
 import ActivitySourceAliasesList from "_components/activity_source_aliases_list";
 import { DismissSubmitDialog } from "_components/dismiss";
 import WatchModal from "_components/watch_modal";
-import { useAppSelector } from "_redux";
+import { employeesApi, useAppSelector } from "_redux";
 import { today, weekAgo } from "config";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { FC, useState } from "react";
 import { createSearchParams, useMatch, useNavigate } from "react-router-dom";
 import { ApiResponse, EmployeeT } from "types";
+import { toastError } from "utils";
 import { storageUrl } from "utils/url";
 import { DismissalButton } from "./buttons";
 import { EmployeeOrgStructure } from "./employee_org_structure";
@@ -52,6 +54,11 @@ const UserInfo: FC<{
         useState(false);
     const [openOrgStructure, setOpenOrgStructure] = useState(false);
 
+    const [shownRegisterUserToken, setShownRegisterUserToken] = useState<
+        string | null
+    >(null);
+    const [registerUser] = employeesApi.useRegisterEmployeeMutation();
+
     const profile = useAppSelector(({ profile }) => profile.payload);
 
     const hasAccessToDismiss = [
@@ -73,6 +80,17 @@ const UserInfo: FC<{
             pathname: "/reports/activity-summary",
             search: createSearchParams(params).toString(),
         });
+    };
+
+    const handleRegister = () => {
+        registerUser(data.id)
+            .unwrap()
+            .then((res) => {
+                setShownRegisterUserToken(res.payload.register_token);
+            })
+            .catch((error) => {
+                toastError(error);
+            });
     };
 
     return (
@@ -116,6 +134,14 @@ const UserInfo: FC<{
             >
                 <EmployeeOrgStructure employee={data} />
             </Modal>
+
+            {shownRegisterUserToken && (
+                <Clipboard
+                    open
+                    value={shownRegisterUserToken}
+                    onClose={() => setShownRegisterUserToken(null)}
+                />
+            )}
 
             <Box display="flex" flexDirection="row" alignItems="center" gap={2}>
                 <Badge
@@ -244,6 +270,24 @@ const UserInfo: FC<{
                                 <AccountTreeIcon />
                             </IconButton>
                         </Tooltip>
+
+                        {profile.admin && (
+                            <Tooltip title="Register user">
+                                <IconButton
+                                    sx={{
+                                        p: 0,
+                                        "&:hover": {
+                                            color: "secondary.main",
+                                        },
+                                    }}
+                                    onClick={handleRegister}
+                                    size="small"
+                                    disableRipple
+                                >
+                                    <KeyIcon />
+                                </IconButton>
+                            </Tooltip>
+                        )}
                     </Box>
                 )}
             </Box>
