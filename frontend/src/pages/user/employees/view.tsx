@@ -27,9 +27,6 @@ export const EmployeeView: FC = () => {
         id: parseInt(id as string),
     });
 
-    const { data: linkedAccounts } =
-        employeesApi.useListEmployeeLinkedAccountQuery(employeeId);
-
     if (error && "status" in error && error.status === 404) {
         toast.error(`User with id ${id} not found`);
         navigate("..");
@@ -41,7 +38,7 @@ export const EmployeeView: FC = () => {
         [id, navigate],
     );
 
-    if (!data || !linkedAccounts) return <LinearProgress />;
+    if (!data) return <LinearProgress />;
 
     return (
         <>
@@ -58,10 +55,7 @@ export const EmployeeView: FC = () => {
                     </TabList>
                 </Box>
                 <TabPanel value="info" sx={{ px: 2 }}>
-                    <EmployeeForm
-                        data={data}
-                        linkedAccounts={linkedAccounts.payload}
-                    />
+                    <EmployeeForm data={data} />
                 </TabPanel>
                 <TabPanel value="presence" sx={{ px: 2 }}>
                     <EmployeePresence id={employeeId} />

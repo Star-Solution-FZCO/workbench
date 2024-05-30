@@ -25,9 +25,6 @@ const UserProfile: FC = () => {
 
     const { data, error } = employeesApi.useGetEmployeeQuery({ id });
 
-    const { data: linkedAccounts } =
-        employeesApi.useListEmployeeLinkedAccountQuery(id);
-
     if (error && "status" in error && error.status === 404) {
         toast.error(`User with id ${id} not found`);
         navigate("..");
@@ -39,7 +36,7 @@ const UserProfile: FC = () => {
         [navigate],
     );
 
-    if (!data || !linkedAccounts) return <LinearProgress />;
+    if (!data) return <LinearProgress />;
 
     return (
         <>
@@ -62,10 +59,7 @@ const UserProfile: FC = () => {
                     </TabList>
                 </Box>
                 <TabPanel value="info" sx={{ px: 2 }}>
-                    <EmployeeForm
-                        data={data}
-                        linkedAccounts={linkedAccounts.payload}
-                    />
+                    <EmployeeForm data={data} />
                 </TabPanel>
                 <TabPanel value="presence" sx={{ px: 2 }}>
                     <EmployeePresence id={id} />
