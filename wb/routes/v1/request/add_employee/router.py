@@ -231,7 +231,7 @@ async def create_add_employee_request(  # pylint: disable=too-many-locals, too-m
     )
     if not settings:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Settings not found')
-    auto_approved = bool({'hr', 'recruiter'} & user_roles)
+    auto_approved = bool({'hr', 'recruiter', 'super_hr'} & user_roles)
     obj = m.AddEmployeeRequest(
         status='NEW',
         created_by=curr_user,
@@ -506,7 +506,7 @@ async def cancel_add_employee_request(
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
-    has_access = bool({'admin', 'hr', 'recruiter'}.intersection(user_roles))
+    has_access = bool({'admin', 'hr', 'recruiter', 'super_hr'}.intersection(user_roles))
     if not has_access:
         raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
     request: m.AddEmployeeRequest | None = await session.scalar(

@@ -64,8 +64,10 @@ class AddEmployeeRequestOut(BaseOutModel['m.AddEmployeeRequest']):
         today = datetime.today().date()
         user = current_employee()
         user_roles = set(user.roles)
-        has_access = bool({'hr', 'recruiter'}.intersection(user_roles))
-        user_hr_or_recruiter = bool({'hr', 'recruiter'}.intersection(user_roles))
+        has_access = bool({'hr', 'recruiter', 'super_hr'}.intersection(user_roles))
+        user_hr_or_recruiter = bool(
+            {'hr', 'recruiter', 'super_hr'}.intersection(user_roles)
+        )
         can_update = obj.status not in ('CANCELED', 'CLOSED', 'APPROVED') and has_access
         can_approve_hr, can_approve_admin = False, False
         if user_hr_or_recruiter and obj.approved_by_hr_id is None:

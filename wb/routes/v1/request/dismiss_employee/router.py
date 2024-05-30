@@ -48,7 +48,7 @@ async def list_dismiss_employee_requests(
 ) -> BaseListOutput[DismissEmployeeRequestOut]:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
-    has_access = bool({'admin', 'hr', 'recruiter'}.intersection(user_roles))
+    has_access = bool({'admin', 'hr', 'recruiter', 'super_hr'}.intersection(user_roles))
     if not has_access:
         raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
     q = sa.select(m.DismissEmployeeRequest)
@@ -97,7 +97,7 @@ async def create_dismiss_employee_request(  # pylint: disable=too-many-locals
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
-    has_access = bool({'admin', 'hr', 'recruiter'}.intersection(user_roles))
+    has_access = bool({'admin', 'hr', 'recruiter', 'super_hr'}.intersection(user_roles))
     if not has_access:
         raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
     existed_request: m.DismissEmployeeRequest = await session.scalar(
