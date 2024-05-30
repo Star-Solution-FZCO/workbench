@@ -22,15 +22,49 @@ import { isEmpty, pickBy } from "lodash";
 import { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { TeamMemberT } from "types";
+import { TeamMemberItemT, TeamMemberT } from "types";
+import { convertSourceName } from "utils/convert";
 import DismissButton from "./dismiss";
+
+const getUniqueSources = (
+    membersMetadata: any,
+): { id: number; name: string }[] => {
+    const sources = new Map<number, string>();
+
+    if (membersMetadata?.linked_accounts) {
+        Object.values(membersMetadata.linked_accounts).forEach(
+            (accounts: any) => {
+                accounts.forEach((account: any) => {
+                    if (!sources.has(account.source.id)) {
+                        sources.set(account.source.id, account.source.name);
+                    }
+                });
+            },
+        );
+    }
+
+    return Array.from(sources, ([id, name]) => ({ id, name }));
+};
+
+const createSourceColumns = (uniqueSources: { id: number; name: string }[]) => {
+    return uniqueSources.map((source) => ({
+        field: convertSourceName(source.name) + "_account_id",
+        headerName: source.name + " Account ID",
+        flex: 1,
+        sortable: false,
+        // @ts-ignore
+        valueGetter: (_, row) =>
+            row.linkedAccounts?.[source.id]?.accountId || "",
+    }));
+};
 
 const TeamMembers: FC<{
     team_id: number;
-    data: TeamMemberT[];
+    data: TeamMemberItemT[];
+    metadata: any;
     can_dismiss: boolean;
     can_edit?: boolean;
-}> = ({ team_id, data: members, can_dismiss, can_edit }) => {
+}> = ({ team_id, data: members, metadata, can_dismiss, can_edit }) => {
     const navigate = useNavigate();
 
     const [contextMenuEvent, setContextMenuEvent] = useState<any | null>(null);
@@ -61,8 +95,11 @@ const TeamMembers: FC<{
         setContextMenuEventCurrentTarget(null);
     };
 
-    const columns = useMemo<GridColDef<TeamMemberT>[]>(
-        () => [
+    const columns = useMemo<GridColDef<TeamMemberItemT>[]>(() => {
+        const uniqueSources = getUniqueSources(metadata);
+        const sourceColumns = createSourceColumns(uniqueSources);
+
+        return [
             {
                 field: "id",
                 headerName: "Actions",
@@ -123,13 +160,13 @@ const TeamMembers: FC<{
                 headerName: "Grade",
                 flex: 1,
             },
-        ],
-        [can_dismiss, can_edit, handleClickEdit],
-    );
+            ...sourceColumns,
+        ];
+    }, [can_dismiss, can_edit, handleClickEdit]);
 
     const handleProcessRowUpdate = async (
-        newRow: TeamMemberT,
-        oldRow: TeamMemberT,
+        newRow: TeamMemberItemT,
+        oldRow: TeamMemberItemT,
     ) => {
         try {
             const updatedValues = pickBy(

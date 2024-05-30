@@ -3,6 +3,8 @@ from datetime import date, datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
+from wb.models.linked_accounts.accounts import LinkedAccount
+from wb.routes.v1.linked_account.schemas import LinkedAccountSourceOut
 from wb.schemas import (
     SelectEmployeeField,
     SelectField,
@@ -23,6 +25,7 @@ __all__ = (
     'EmployeeHistoryRecordOut',
     'EmployeeTMKeyUpdateOut',
     'EmployeeUpdate',
+    'EmployeeLinkedAccountOut',
 )
 
 
@@ -114,4 +117,18 @@ class EmployeeHierarchyOut(BaseModel):
             name=obj['name'],
             attributes=obj['attributes'],
             children=[cls.from_obj(child) for child in obj['children']],
+        )
+
+
+class EmployeeLinkedAccountOut(BaseModel):
+    source: LinkedAccountSourceOut
+    account_id: str
+    active: bool | None
+
+    @classmethod
+    def from_obj(cls, obj: 'LinkedAccount') -> 'EmployeeLinkedAccountOut':
+        return cls(
+            source=LinkedAccountSourceOut.from_obj(obj.source),
+            account_id=obj.account_id,
+            active=obj.active,
         )

@@ -5,20 +5,49 @@ import { FC } from "react";
 import {
     ApiResponse,
     CounteragentT,
+    EmployeeLinkedAccountT,
     EmployeeT,
     ListResponseT,
-    TeamMemberT,
+    TeamMemberItemT,
     TeamT,
 } from "types";
 import TeamMembers from "./team_members";
 
+const processLinkedAccounts = (metadata: any, members: EmployeeT[]) => {
+    return members.map((member) => {
+        const linkedAccounts: EmployeeLinkedAccountT[] =
+            metadata?.linked_accounts[member.id] || [];
+
+        const linkedAccountsData = linkedAccounts.reduce(
+            (acc, account) => {
+                const sourceName = account.source.name;
+                const sourceId = account.source.id;
+                acc[sourceId] = {
+                    name: sourceName,
+                    accountId: account.account_id,
+                };
+                return acc;
+            },
+            {} as Record<number, { name: string; accountId: string }>,
+        );
+
+        return {
+            ...member,
+            linkedAccounts: linkedAccountsData,
+        };
+    });
+};
+
 const combineTeamData = (
     membersData: ApiResponse<ListResponseT<EmployeeT>> | undefined,
     counteragentsData: ApiResponse<ListResponseT<CounteragentT>> | undefined,
-): TeamMemberT[] => {
-    const results: TeamMemberT[] = [];
+): TeamMemberItemT[] => {
+    const results: TeamMemberItemT[] = [];
 
-    const members = membersData?.payload?.items || [];
+    const members = processLinkedAccounts(
+        membersData?.metadata || {},
+        membersData?.payload?.items || [],
+    );
     const counteragents = counteragentsData?.payload?.items || [];
 
     members.forEach((member) => {
@@ -30,6 +59,7 @@ const combineTeamData = (
             team_position: member.team_position || "",
             grade: member.grade?.grade || "",
             counteragent: false,
+            linkedAccounts: member.linkedAccounts,
         });
     });
 
@@ -68,6 +98,7 @@ const TeamInfo: FC<ITeamInfoProps> = ({ id, team }) => {
         <TeamMembers
             team_id={id}
             data={combineTeamData(members.data, counteragents.data)}
+            metadata={members.data?.metadata || {}}
             can_dismiss={adminOrTeamManager}
             can_edit={adminOrTeamManager}
         />

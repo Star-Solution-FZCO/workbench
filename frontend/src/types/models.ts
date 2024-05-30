@@ -1304,7 +1304,11 @@ export type TeamMemberT = {
     position: string;
     team_position: string;
     grade: string;
+};
+
+export type TeamMemberItemT = TeamMemberT & {
     counteragent: boolean;
+    linkedAccounts?: Record<number, { name: string; accountId: string }>;
 };
 
 export type NewTeamTagT = {
@@ -1387,4 +1391,24 @@ export type DoneTasksSummaryT = {
 export type PasswordSetT = {
     otp_code: string;
     password: string;
+};
+
+export type NewLinkedAccountSourceT = {
+    type: SelectOptionT;
+    name: string;
+    description: string;
+    active: boolean;
+    public: boolean;
+};
+
+export type LinkedAccountSourceT = { id: number } & NewLinkedAccountSourceT;
+
+export type UpdateLinkedAccountSourceT = {
+    id: number;
+} & Partial<NewLinkedAccountSourceT>;
+
+export type EmployeeLinkedAccountT = {
+    source: LinkedAccountSourceT;
+    account_id: string;
+    active: boolean | null;
 };

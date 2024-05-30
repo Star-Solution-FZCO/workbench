@@ -7,12 +7,15 @@ import {
     CustomBaseQueryFn,
     EmployeeHierarchyT,
     EmployeeHistoryRecordT,
+    EmployeeLinkedAccountT,
     EmployeeSelectOptionT,
     EmployeeT,
+    LinkedAccountSourceT,
     ListRequestParamsT,
     ListResponseT,
     NewCounteragentT,
     NewEmployeeT,
+    NewLinkedAccountSourceT,
     NewTeamT,
     ProfileModelT,
     SelectOptionT,
@@ -21,6 +24,7 @@ import {
     TeamT,
     UpdateCounteragentT,
     UpdateEmployeeT,
+    UpdateLinkedAccountSourceT,
     UpdateTeamT,
 } from "types";
 import { saveFile } from "utils";
@@ -36,6 +40,9 @@ const tagTypes = [
     "Counteragents",
     "CounteragentsCredentialsItem",
     "CounteragentsCredentialsList",
+    "LinkedAccountSource",
+    "LinkedAccountSources",
+    "LinkedAccountSourceTypes",
 ];
 
 export const employeesApi = createApi({
@@ -528,6 +535,67 @@ export const employeesApi = createApi({
             query: (id) => ({
                 url: `${apiVersion}/employee/${id}/remove-registration`,
                 method: "DELETE",
+            }),
+        }),
+        // linked accounts
+        listLinkedAccountSourceSelect: build.query<SelectOptionT[], string>({
+            query: (search) => ({
+                url: `${apiVersion}/linked-account/source/select`,
+                ...(search ? { params: { search } } : {}),
+            }),
+            transformResponse: (result: ApiResponse<SelectOptionT[]>) =>
+                result.payload,
+            providesTags: ["LinkedAccountSources"],
+        }),
+        listLinkedAccountSourceTypeSelect: build.query<SelectOptionT[], string>(
+            {
+                query: (search) => ({
+                    url: `${apiVersion}/linked-account/source/select/type`,
+                    ...(search ? { params: { search } } : {}),
+                }),
+                transformResponse: (result: ApiResponse<SelectOptionT[]>) =>
+                    result.payload,
+                providesTags: ["LinkedAccountSourceTypes"],
+            },
+        ),
+        listLinkedAccountSource: build.query<
+            ApiResponse<ListResponseT<LinkedAccountSourceT>>,
+            ListRequestParamsT
+        >({
+            query: (params) => ({
+                url: `${apiVersion}/linked-account/source/list`,
+                params,
+            }),
+            providesTags: ["LinkedAccountSources"],
+        }),
+        createLinkedAccountSource: build.mutation<
+            ApiResponse<{ id: number }>,
+            NewLinkedAccountSourceT
+        >({
+            query: (body) => ({
+                url: `${apiVersion}/linked-account/source`,
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["LinkedAccountSources"],
+        }),
+        updateLinkedAccountSource: build.mutation<
+            ApiResponse<{ id: number }>,
+            UpdateLinkedAccountSourceT
+        >({
+            query: ({ id, ...body }) => ({
+                url: `${apiVersion}/linked-account/source/${id}`,
+                method: "PUT",
+                body,
+            }),
+            invalidatesTags: ["LinkedAccountSources"],
+        }),
+        listEmployeeLinkedAccount: build.query<
+            ApiResponse<EmployeeLinkedAccountT[]>,
+            number
+        >({
+            query: (id) => ({
+                url: `${apiVersion}/employee/${id}/linked-accounts`,
             }),
         }),
     }),

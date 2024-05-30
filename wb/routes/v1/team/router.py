@@ -19,6 +19,7 @@ import wb.models as m
 from wb.acl import list_employee_readable_fields
 from wb.db import get_db_session
 from wb.routes.v1.counteragent.schemas import CounterAgentOut
+from wb.routes.v1.employee.schemas import EmployeeLinkedAccountOut
 from wb.schemas import (
     BaseListOutput,
     BaseModelIdOutput,
@@ -350,6 +351,7 @@ async def get_team_members(
         employees, today, today, session=session
     )
     items = []
+    metadata = {'linked_accounts': {}}
     for emp in employees:
         output_model_class = get_employee_output_model_class(emp)
         emp_out = output_model_class.from_obj(
@@ -357,11 +359,16 @@ async def get_team_members(
             today_schedule_status=employees_days[emp.id][today],
         )
         items.append(emp_out)
+        metadata['linked_accounts'][emp.id] = [
+            EmployeeLinkedAccountOut.from_obj(account)
+            for account in emp.linked_accounts
+        ]
     return make_list_output(
         count=count,
         limit=count,
         offset=0,
         items=items,
+        metadata=metadata,
     )
 
 
