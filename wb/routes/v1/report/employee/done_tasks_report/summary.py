@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import wb.models as m
 from wb.schemas.employee import get_employee_output_model_class
 from wb.services import get_employees_days_activity_status
+from wb.services.done_tasks import get_done_task_summary_by_day
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
@@ -15,7 +16,7 @@ from .._base import (
     DaysSimpleReportDayItem,
     DaysSimpleReportItem,
 )
-from .common import ReportItem, get_stats
+from .common import ReportItem
 
 __all__ = ('generate_done_tasks_summary_report',)
 
@@ -43,7 +44,7 @@ async def generate_done_tasks_summary_report(
         session=session,
     )
     results: list[DaysSimpleReportItem[ReportItem]] = []
-    stats = await get_stats(
+    stats = await get_done_task_summary_by_day(
         employees,
         start,
         end,
@@ -57,9 +58,10 @@ async def generate_done_tasks_summary_report(
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem(
-                            issues=day_stats[1].issues,
-                            commits=day_stats[0].commits,
-                            comments=day_stats[0].comments,
+                            issues=day_stats.youtrack_issues,
+                            gerrit_commits=day_stats.gerrit_commits,
+                            gerrit_comments=day_stats.gerrit_comments,
+                            cvs_commits=day_stats.cvs_commits,
                             vacations=1
                             if days_status[emp.id][day] == m.DayType.VACATION
                             else 0,
@@ -76,9 +78,14 @@ async def generate_done_tasks_summary_report(
                     for day, day_stats in stats[emp.id].items()
                 },
                 total=ReportItem(
-                    issues=sum(s[1].issues for s in stats[emp.id].values()),
-                    commits=sum(s[0].commits for s in stats[emp.id].values()),
-                    comments=sum(s[0].comments for s in stats[emp.id].values()),
+                    issues=sum(s.youtrack_issues for s in stats[emp.id].values()),
+                    gerrit_commits=sum(
+                        s.gerrit_commits for s in stats[emp.id].values()
+                    ),
+                    gerrit_comments=sum(
+                        s.gerrit_comments for s in stats[emp.id].values()
+                    ),
+                    cvs_commits=sum(s.cvs_commits for s in stats[emp.id].values()),
                     vacations=len(
                         list(
                             filter(

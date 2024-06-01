@@ -42,4 +42,7 @@ class ActivitySource(BaseDBModel):
     activity_collected: Mapped[datetime] = mapped_column(
         server_default=sa.func.now()  # pylint: disable=not-callable
     )
+    done_tasks_collected: Mapped[datetime] = mapped_column(
+        server_default=sa.func.now()  # pylint: disable=not-callable
+    )
     private: Mapped[bool] = mapped_column(server_default=expression.false())

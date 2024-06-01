@@ -30,6 +30,12 @@ celery_app.conf.beat_schedule = {
         'task': 'collect_activities',
         'schedule': crontab(hour='*/4', minute='0'),
     },
+    'task-update-done-tasks': {
+        'task': 'update_done_tasks',
+        'schedule': crontab(
+            hour='2,6,10,14,18,22', minute='0'
+        ),  # same as 2/4, but celery does not support it
+    },
     'task-maintenance-create-next-month-partitions': {
         'task': 'maintenance_create_next_month_partitions',
         'schedule': crontab(hour='3', minute='3', day_of_month='3'),
