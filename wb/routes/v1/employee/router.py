@@ -44,6 +44,7 @@ from wb.services import (
     get_employees,
     get_employees_days_status,
 )
+from wb.services.done_tasks import get_done_task_score
 from wb.services.employee import check_similar_usernames
 from wb.services.notifications import (
     Notification,
@@ -200,11 +201,14 @@ async def list_employees(
     employees_days = await get_employees_days_status(
         employees, today, today, session=session
     )
+    employees_done_task_scores = await get_done_task_score(employees, session=session)
     items = []
     for emp in employees:
         output_model_class = get_employee_output_model_class(emp)
         emp_out = output_model_class.from_obj(
-            emp, today_schedule_status=employees_days[emp.id][today]
+            emp,
+            today_schedule_status=employees_days[emp.id][today],
+            done_task_score=employees_done_task_scores[emp.id],
         )
         items.append(emp_out)
     return make_list_output(
@@ -330,9 +334,12 @@ async def employee_get(
     ]
     today = date.today()
     day_types_raw = await get_employee_days_status(emp, today, today, session=session)
+    done_task_scores = await get_done_task_score([emp], session=session)
     return make_success_output(
         payload=output_model_class.from_obj(
-            emp, today_schedule_status=day_types_raw[today]
+            emp,
+            today_schedule_status=day_types_raw[today],
+            done_task_score=done_task_scores[emp.id],
         ),
         metadata={'fields': fields_metadata},
     )

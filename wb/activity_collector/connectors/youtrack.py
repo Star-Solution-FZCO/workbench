@@ -1,25 +1,21 @@
-import asyncio
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional, Sequence, Union
 from urllib.parse import quote, urljoin
 
 import aiohttp
 
 import wb.models as m
-from shared_utils.dateutils import month_range
 from wb.log import log
 from wb.models.activity import Activity, ActivitySource
-from wb.utils.cache import get_key_builder_exclude_args, lru_cache
 
-from .base import Connector, DoneTask
+from .base import Connector
 
 __all__ = ('YoutrackConnector',)
 
 
 YOUTRACK_TIMEOUT = 60
-UNCACHED_PERIOD_DAYS = 2 * 30
 
 
 async def json_request(url: str, token: str, base: str) -> Union[Dict, List]:
@@ -220,7 +216,15 @@ class YoutrackConnector(Connector):
             if u['email'] in employees_ids_by_email
         }
 
-    async def _get_resolved_issues(self, start: float, end: float) -> list:
+    async def get_updated_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> list['m.DoneTask']:
+        log.debug(
+            f'[{self.source.name}] getting updated done tasks from {start} to {end}'
+        )
+        if start > end:
+            log.warning(f'[{self.source.name}] start > end ({start} > {end})')
+            return []
         start_ = datetime.utcfromtimestamp(start)
         end_ = datetime.utcfromtimestamp(end)
         query = f'resolved date: {{{start_.strftime("%Y-%m-%dT%H:%M:%S")}}} .. {{{end_.strftime("%Y-%m-%dT%H:%M:%S")}}}'
@@ -230,102 +234,33 @@ class YoutrackConnector(Connector):
             '&customFields=assignee'
             f'&query={quote(query)}'
         )
-        return [r async for r in get_objects(url, self.__token, self.__url)]
 
-    async def get_done_tasks(
-        self, start: float, end: float, aliases: dict[str, int]
-    ) -> dict[int, list[DoneTask]]:
-        # pylint: disable=too-many-locals
-        log.debug(f'[{self.source.name}] getting done tasks from {start} to {end}')
-        if start > end:
-            return {}
-        issues = {}
-        start_ = datetime.utcfromtimestamp(start)
-        end_ = datetime.utcfromtimestamp(end)
-        cached_end = datetime.utcnow() - timedelta(days=UNCACHED_PERIOD_DAYS)
-        log.debug(f'[{self.source.name}] cached_end={cached_end}')
-        tasks = []
-        if cached_end >= start_:
-            tasks.extend(
-                [
-                    _get_resolved_issues_by_month(month, year, self.source.id, self)
-                    for year, month in month_range(
-                        (start_.year, start_.month), (cached_end.year, cached_end.month)
-                    )
-                ]
-            )
-        if max(cached_end, start_) < end_:
-            uncached_start_ts = (
-                max(cached_end, start_).replace(tzinfo=timezone.utc).timestamp()
-            )
-            tasks.append(self._get_resolved_issues(uncached_start_ts, end))
+        results = []
 
-        for idx, res in enumerate(await asyncio.gather(*tasks)):
-            try:
-                log.debug(f'[{self.source.name}] got {len(res)} issues from {idx} task')
-                issues.update(
-                    {
-                        c['idReadable']: c
-                        for c in res
-                        if start <= c['resolved'] / 1000 <= end
-                    }
-                )
-            except Exception as err:
-                log.error(
-                    f'[{self.source.name}] error while processing task {idx}: {err}'
-                )
-                raise
-        log.debug(f'[{self.source.name}] got {len(issues)} issues')
-
-        results: dict[int, list[DoneTask]] = {}
-
-        def _add_done_task(assignee_id: str | None, task_: DoneTask) -> None:
-            if not assignee_id:
-                return
-            if not (emp_id := aliases.get(assignee_id)):
-                return
-            if task_.time < start_ or task_.time >= end_:
-                return
-            task_.employee_id = emp_id
-            if task_.employee_id not in results:
-                results[task_.employee_id] = []
-            results[task_.employee_id].append(task_)
-
-        for r in issues.values():
-            custom_fields = _parse_custom_fields(r.get('customFields', []))
+        cnt_total = 0
+        async for issue in get_objects(url, self.__token, self.__url):
+            cnt_total += 1
+            custom_fields = _parse_custom_fields(issue.get('customFields', []))
             if not (assignee_value := custom_fields.get('Assignee', {}).get('value')):
                 continue
-            _add_done_task(
-                assignee_value.get('id'),
-                DoneTask(
-                    employee_id=0,
+            if not (employee_id := aliases.get(assignee_value['id'])):
+                continue
+            results.append(
+                m.DoneTask(
+                    employee_id=employee_id,
                     source_id=self.source.id,
-                    time=datetime.utcfromtimestamp(r['resolved'] / 1000),
-                    task_id=r['idReadable'],
+                    time=datetime.utcfromtimestamp(issue['resolved'] / 1000),
+                    task_id=issue['idReadable'],
                     task_type='RESOLVED_ISSUE',
-                    task_name=r.get('summary'),
-                    task_link=f'{self.__url}/issue/{r["idReadable"]}',
+                    task_name=issue.get('summary'),
+                    task_link=f'{self.__url}/issue/{issue["idReadable"]}',
                 ),
             )
-        log.debug(f'[{self.source.name}] got {len(results)} done tasks')
+
+        log.debug(f'[{self.source.name}] got {cnt_total} issues')
+        log.debug(f'[{self.source.name}] got {len(results)} updated done tasks')
         return results
 
 
 def _parse_custom_fields(custom_fields: list[dict]) -> dict:
     return {cf['name']: cf for cf in custom_fields}
-
-
-@lru_cache(
-    ttl=UNCACHED_PERIOD_DAYS * 24 * 60 * 60,
-    key_builder=get_key_builder_exclude_args(('connector',)),
-)
-async def _get_resolved_issues_by_month(
-    month: int,
-    year: int,
-    source_id: int,  # pylint: disable=unused-argument
-    connector: YoutrackConnector,
-) -> list:
-    start = datetime(year, month, 1, tzinfo=timezone.utc).timestamp()
-    next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
-    end = datetime(next_year, next_month, 1, tzinfo=timezone.utc).timestamp() - 0.000001
-    return await connector._get_resolved_issues(start, end)  # pylint: disable=protected-access

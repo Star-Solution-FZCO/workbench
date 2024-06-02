@@ -18,6 +18,7 @@ class ActivitySourceOut(BaseOutModel['m.ActivitySource']):
     description: str | None
     active: bool
     activity_collected: datetime
+    done_tasks_collected: datetime
     private: bool
 
     @classmethod
@@ -29,6 +30,7 @@ class ActivitySourceOut(BaseOutModel['m.ActivitySource']):
             description=obj.description,
             active=obj.active,
             activity_collected=obj.activity_collected,
+            done_tasks_collected=obj.done_tasks_collected,
             private=obj.private,
         )
 

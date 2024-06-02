@@ -260,6 +260,12 @@ EMPLOYEE_FIELD_ANNOTATIONS: dict[str, ModelFieldAnnotation[m.Employee]] = {
         csv_include=True,
         _csv_getter=lambda obj: obj.pool.name if obj.pool else '',
     ),
+    'done_task_score': ModelFieldAnnotation(
+        name='done_task_score',
+        type=float,
+        csv_include=False,
+        extra=True,
+    ),
 }
 
 

@@ -55,6 +55,7 @@ class BaseMonthPartitionedModel(BaseDBModel):
     __abstract__ = True
     __part_mixin__: ClassVar
     __partitions__: ClassVar[Dict[str, Tuple[Any, bool]]]
+    __parts_table_args__: ClassVar[tuple | None] = None
 
     @staticmethod
     def _gen_key(month: int, year: int) -> str:
@@ -70,7 +71,10 @@ class BaseMonthPartitionedModel(BaseDBModel):
             (cls.__part_mixin__, BaseDBModel),
             {
                 '__tablename__': f'{cls.__tablename__}__part__{key}',
-                '__table_args__': {'schema': 'partitions'},
+                '__table_args__': (
+                    *(cls.__parts_table_args__ or ()),
+                    {'schema': 'partitions'},
+                ),
                 '__part_keys__': {'month': month, 'year': year},
             },
         )

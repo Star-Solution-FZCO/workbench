@@ -12,6 +12,7 @@ async def _create_partitions(month: int, year: int) -> None:
     async with multithreading_safe_async_session() as session:
         await m.Activity.create_partition(month, year, session=session)
         await m.TMRecord.create_partition(month, year, session=session)
+        await m.DoneTask.create_partition(month, year, session=session)
 
 
 @celery_app.task(name='maintenance_create_next_month_partitions')

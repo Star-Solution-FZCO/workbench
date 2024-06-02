@@ -1,20 +1,17 @@
-import asyncio
 import json
 import logging
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Sequence
 from urllib.parse import urljoin
 
 import aiohttp
 
 import wb.models as m
-from shared_utils.dateutils import month_range
 from wb.log import log
 from wb.models.activity import Activity, ActivitySource
-from wb.utils.cache import get_key_builder_exclude_args, lru_cache
 
-from .base import Connector, DoneTask
+from .base import Connector
 
 __all__ = ('GerritPresenceConnector',)
 
@@ -22,7 +19,6 @@ __all__ = ('GerritPresenceConnector',)
 GERRIT_MAGIC_JSON_PREFIX = b")]}'\n"
 GERRIT_AUTH_SUFFIX = '/a'
 COMMENTS_PATTERN = re.compile(r'^\((\d+) comments?\)$')
-UNCACHED_PERIOD_DAYS = 2 * 30
 
 
 def _fill_change_meta(change: dict) -> dict:
@@ -116,29 +112,6 @@ def time_converter(time_str: str) -> datetime:
         f'{time_str.split(".")[0]} +0000', '%Y-%m-%d %H:%M:%S %z'
     ).timestamp()
     return datetime.utcfromtimestamp(utc_ts)
-
-
-def _parse_messages_comments(msgs: list[dict]) -> dict[int, list[datetime, int, int]]:
-    results = {}
-    for msg in msgs:
-        author = msg.get('author', {}).get('_account_id')
-        if not author:
-            continue
-        if author not in results:
-            results[author] = []
-        comment_parts = filter(
-            bool,
-            map(COMMENTS_PATTERN.fullmatch, msg.get('message', '').split('\n\n')),
-        )
-        for p in comment_parts:
-            results[author].append(
-                (
-                    datetime.fromisoformat(msg['date']),
-                    int(p.groups()[0]),
-                    msg['_revision_number'],
-                )
-            )
-    return results
 
 
 def _parse_revisions(revs: dict[str, dict]) -> dict[int, tuple[datetime, int, bool]]:
@@ -328,137 +301,82 @@ class GerritPresenceConnector(Connector):
                 continue
         return results
 
-    async def _get_changes_changed_in(
-        self,
-        start: float,
-        end: float,
-    ) -> list:
-        log.debug(f'Getting changes from {start} to {end}')
-        start_ = datetime.utcfromtimestamp(start).strftime('%Y-%m-%d %H:%M:%S')
-        end_ = datetime.utcfromtimestamp(end).strftime('%Y-%m-%d %H:%M:%S')
-        return await self.__rest.get_changes_list(
-            f'/changes/?q=after:"{start_}" before:"{end_}" '
+    async def get_updated_done_tasks(
+        self, start: float, end: float, aliases: dict[str, int]
+    ) -> list['m.DoneTask']:
+        # pylint: disable=too-many-locals
+        log.debug(
+            f'[{self.source.name}] Getting done tasks updated from {start} to {end}'
+        )
+        if start > end:
+            log.warning(f'[{self.source.name}] start > end ({start} > {end})')
+            return []
+        start_dt = datetime.utcfromtimestamp(start)
+        end_dt = datetime.utcfromtimestamp(end)
+        start_str = start_dt.strftime('%Y-%m-%d %H:%M:%S')
+        end_str = end_dt.strftime('%Y-%m-%d %H:%M:%S')
+        changes = await self.__rest.get_changes_list(
+            f'/changes/?q=after:"{start_str}" before:"{end_str}" '
             f'branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
         )
+        log.debug(f'[{self.source.name}] got {len(changes)} updated changes')
 
-    async def get_done_tasks(
-        self, start: float, end: float, aliases: dict[str, int]
-    ) -> dict[int, list[DoneTask]]:
-        # pylint: disable=too-many-locals, too-many-branches
-        log.debug(f'[{self.source.name}] Getting done tasks from {start} to {end}')
-        if start > end:
-            return {}
-        changes = {}
-        start_ = datetime.utcfromtimestamp(start)
-        end_ = datetime.utcfromtimestamp(end)
-        cached_end = datetime.utcnow() - timedelta(days=UNCACHED_PERIOD_DAYS)
-        log.debug(f'[{self.source.name}] cached_end={cached_end}')
-        tasks = []
-        if cached_end >= start_:
-            tasks.extend(
-                [
-                    _get_changes_updated_by_month(month, year, self.source.id, self)
-                    for year, month in month_range(
-                        (start_.year, start_.month), (cached_end.year, cached_end.month)
-                    )
-                ]
-            )
-        tasks.append(
-            self.__rest.get_changes_list(
-                f'/changes/?q=after:"{max(start_, cached_end).strftime("%Y-%m-%d %H:%M:%S")}" '
-                f'branch:master&o=ALL_REVISIONS&o=DETAILED_LABELS&o=DETAILED_ACCOUNTS&o=MESSAGES'
-            )
-        )
-        for idx, res in enumerate(await asyncio.gather(*tasks)):
-            log.debug(f'[{self.source.name}] got {len(res)} changes from {idx} task')
-            try:
-                changes.update(
-                    {
-                        c['id']: c
-                        for c in res
-                        if start_ <= datetime.fromisoformat(c['updated']) <= end_
-                    }
-                )
-            except Exception as err:
-                log.error(err)
-                raise
-        log.debug(f'[{self.source.name}] got {len(changes)} changes')
-        results = {}
+        results = []
 
-        def _add_done_task(author_id_: int, task_: DoneTask) -> None:
-            if not (emp_id := aliases.get(str(author_id_))):
-                return
-            task_.employee_id = emp_id
-            if task_.employee_id not in results:
-                results[task_.employee_id] = []
-            results[task_.employee_id].append(task_)
+        for c in changes:
+            parsed_revisions = _parse_revisions(c.get('revisions', {}))
 
-        for r in changes.values():
-            parsed_comments = _parse_messages_comments(r.get('messages', []))
-            parsed_revisions = _parse_revisions(r.get('revisions', {}))
-            not_self_comments = {}
-            for author_id, comments in parsed_comments.items():
-                for comment in comments:
-                    if (
-                        author_id != parsed_revisions[comment[2]][1]
-                        and comment[0] >= start_
-                        and comment[0] < end_
-                    ):
-                        if author_id not in not_self_comments:
-                            not_self_comments[author_id] = []
-                        not_self_comments[author_id].append(comment)
             last_revision = max(
                 [rev for rev, pr in parsed_revisions.items() if not pr[2]] or [0]
             )
             if (
-                r['status'] == 'MERGED'
+                c['status'] == 'MERGED'
                 and last_revision
-                and parsed_revisions[last_revision][0] >= start_
-                and parsed_revisions[last_revision][0] < end_
+                and parsed_revisions[last_revision][0] >= start_dt
+                and parsed_revisions[last_revision][0] < end_dt
+                and (emp_id := aliases.get(str(parsed_revisions[last_revision][1])))
             ):
-                _add_done_task(
-                    parsed_revisions[last_revision][1],
-                    DoneTask(
-                        employee_id=0,
+                results.append(
+                    m.DoneTask(
+                        employee_id=emp_id,
                         source_id=self.source.id,
                         time=parsed_revisions[last_revision][0],
-                        task_id=r['id'],
+                        task_id=c['id'],
                         task_type='MERGED_COMMIT',
-                        task_name=r['subject'],
-                        task_link=f'{self.__url}/#/q/{r["id"].split("~")[-1]}',
-                    ),
+                        task_name=c['subject'],
+                        task_link=f'{self.__url}/#/q/{c["id"].split("~")[-1]}',
+                    )
                 )
-            for author_id, comments in not_self_comments.items():
-                for c in comments:
-                    for _ in range(c[1]):
-                        _add_done_task(
-                            author_id,
-                            DoneTask(
-                                employee_id=0,
-                                source_id=self.source.id,
-                                time=c[0],
-                                task_id=r['id'],
-                                task_type='COMMENT',
-                                task_name=r['subject'],
-                                task_link=f'{self.__url}/#/q/{r["id"].split("~")[-1]}',
-                            ),
+            if c.get('total_comment_count', 0) == 0:
+                continue
+            comments_response = await self.__rest.get(f'/changes/{c["id"]}/comments')
+            for comments in comments_response.values():
+                for comment in comments:
+                    comment_time = time_converter(comment['updated'])
+                    if comment_time < start_dt or comment_time >= end_dt:
+                        continue
+                    if (
+                        comment['author']['_account_id']
+                        == parsed_revisions[comment['patch_set']][1]
+                    ):
+                        # skip comments from the same author that uploaded the patch set
+                        continue
+                    if not (
+                        comment_emp_id := aliases.get(
+                            str(comment['author']['_account_id'])
                         )
-        log.debug(f'[{self.source.name}] got {len(results)} done tasks')
+                    ):
+                        continue
+                    results.append(
+                        m.DoneTask(
+                            employee_id=comment_emp_id,
+                            source_id=self.source.id,
+                            time=comment_time,
+                            task_id=comment['id'],
+                            task_type='COMMENT',
+                            task_name=c['subject'],
+                            task_link=f'{self.__url}/c/{c["project"]}/+/{c["id"]}/comment/{comment["id"]}',
+                        )
+                    )
+        log.debug(f'[{self.source.name}] got {len(results)} updated done tasks')
         return results
-
-
-@lru_cache(
-    ttl=UNCACHED_PERIOD_DAYS * 24 * 60 * 60,
-    key_builder=get_key_builder_exclude_args(('connector',)),
-)
-async def _get_changes_updated_by_month(
-    month: int,
-    year: int,
-    source_id: int,  # pylint: disable=unused-argument
-    connector: GerritPresenceConnector,
-) -> list:
-    log.debug(f'Getting changes for {year}-{month}')
-    start = datetime(year, month, 1, tzinfo=timezone.utc).timestamp()
-    next_month, next_year = (month + 1, year) if month < 12 else (1, year + 1)
-    end = datetime(next_year, next_month, 1, tzinfo=timezone.utc).timestamp() - 0.000001
-    return await connector._get_changes_changed_in(start, end)  # pylint: disable=protected-access

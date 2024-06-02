@@ -26,6 +26,7 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                     <th>YT Resolved issues</th>
                     <th>Merged gerrit commits</th>
                     <th>Gerrit comments</th>
+                    <th>CVS commits</th>
                     <th>Vacations</th>
                     <th>Sick days</th>
                     <th>Working days</th>
@@ -39,8 +40,9 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                             <Employee employee={record.employee} />
                         </td>
                         <td>{record.item.issues}</td>
-                        <td>{record.item.commits}</td>
-                        <td>{record.item.comments}</td>
+                        <td>{record.item.gerrit_commits}</td>
+                        <td>{record.item.gerrit_comments}</td>
+                        <td>{record.item.cvs_commits}</td>
                         <td>{record.item.vacations}</td>
                         <td>{record.item.sick_days}</td>
                         <td>{record.item.working_days}</td>

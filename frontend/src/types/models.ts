@@ -196,6 +196,7 @@ export type EmployeeT = {
     probation_period_justification?: string | null;
     dismissal_reason?: string;
     today_schedule_status: DayT;
+    done_task_score: number;
     pool: SelectOptionT | null;
 };
 
@@ -1356,8 +1357,9 @@ export type CredentialsTypeT =
 
 export type DoneTasksSummaryItemT = {
     issues: number;
-    commits: number;
-    comments: number;
+    gerrit_commits: number;
+    gerrit_comments: number;
+    cvs_commits: number;
     vacations: number;
     sick_days: number;
     working_days: number;

@@ -46,6 +46,7 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                     <th>YT Resolved issues</th>
                     <th>Merged gerrit commits</th>
                     <th>Gerrit comments</th>
+                    <th>CVS commits</th>
                 </tr>
             </thead>
 
@@ -81,8 +82,9 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                             {capitalize(data.day_status.split("_").join(" "))}
                         </td>
                         <td>{data.item.issues}</td>
-                        <td>{data.item.commits}</td>
-                        <td>{data.item.comments}</td>
+                        <td>{data.item.gerrit_commits}</td>
+                        <td>{data.item.gerrit_comments}</td>
+                        <td>{data.item.cvs_commits}</td>
                     </tr>
                 ))}
 
@@ -94,10 +96,13 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                         <strong>{data.total.issues}</strong>
                     </td>
                     <td>
-                        <strong>{data.total.commits}</strong>
+                        <strong>{data.total.gerrit_commits}</strong>
                     </td>
                     <td>
-                        <strong>{data.total.comments}</strong>
+                        <strong>{data.total.gerrit_comments}</strong>
+                    </td>
+                    <td>
+                        <strong>{data.total.cvs_commits}</strong>
                     </td>
                 </tr>
             </tbody>

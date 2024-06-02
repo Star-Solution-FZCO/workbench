@@ -5,11 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
 from wb.schemas.employee import get_employee_output_model_class
+from wb.services.done_tasks import get_done_task_summary
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
 from .._base import FULL_EMPLOYEE_FIELDS, SimpleReport, SimpleReportItem
-from .common import ReportItem, get_stats
+from .common import ReportItem
 
 __all__ = ('generate_done_tasks_summary_total_report',)
 
@@ -32,7 +33,7 @@ async def generate_done_tasks_summary_total_report(
     )
 
     results: list[SimpleReportItem[ReportItem]] = []
-    stats = await get_stats(
+    stats = await get_done_task_summary(
         employees,
         start,
         end,
@@ -44,9 +45,10 @@ async def generate_done_tasks_summary_total_report(
             SimpleReportItem(
                 employee=emp_out_cls.from_obj(emp),
                 item=ReportItem(
-                    issues=sum(s[1].issues for s in stats[emp.id].values()),
-                    commits=sum(s[0].commits for s in stats[emp.id].values()),
-                    comments=sum(s[0].comments for s in stats[emp.id].values()),
+                    issues=stats[emp.id].youtrack_issues,
+                    gerrit_commits=stats[emp.id].gerrit_commits,
+                    gerrit_comments=stats[emp.id].gerrit_comments,
+                    cvs_commits=stats[emp.id].cvs_commits,
                     vacations=len(
                         list(
                             filter(

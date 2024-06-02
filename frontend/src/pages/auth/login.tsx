@@ -172,7 +172,7 @@ export const LoginPage: React.FC = () => {
                             Sign In
                         </LoadingButton>
 
-                        <AuthLabel authMode={AUTH_MODE}/>
+                        <AuthLabel authMode={AUTH_MODE} />
                     </Box>
                 </Box>
             </Container>

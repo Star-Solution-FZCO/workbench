@@ -9,6 +9,7 @@ export * from "./day_off";
 export * from "./employee";
 export * from "./employee_list_filter";
 export * from "./employee_presence";
+export * from "./employee_score";
 export * from "./error_boundary";
 export * from "./fallback";
 export * from "./fields";

@@ -25,6 +25,7 @@ import {
 import {
     DataGridContextMenu,
     Employee,
+    EmployeeDoneTaskScore,
     EmployeeListFilter,
     ListStateT,
     SearchField,
@@ -146,7 +147,7 @@ export const UserEmployees = () => {
                 ),
             },
             {
-                field: "Today schedule status",
+                field: "Status",
                 headerName: "",
                 sortable: false,
                 resizable: false,
@@ -161,7 +162,9 @@ export const UserEmployees = () => {
                         alignItems="center"
                         width="100%"
                         height="100%"
+                        gap={1}
                     >
+                        <EmployeeDoneTaskScore score={row.done_task_score} />
                         <DayTypeIconButton
                             id={row.id}
                             dayType={row.today_schedule_status}
