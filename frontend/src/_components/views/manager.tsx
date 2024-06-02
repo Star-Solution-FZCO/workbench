@@ -15,6 +15,7 @@ import LinesEllipsis from "react-lines-ellipsis";
 import { useNavigate } from "react-router-dom";
 import { EmployeeT, UserInfoT } from "types/models";
 import { avatarUrl, storageUrl } from "utils/url";
+import { EmployeeDoneTaskScore } from "../employee_score.tsx";
 
 type EmployeeAvatarPropsT = {
     id: number;
@@ -181,9 +182,16 @@ export const EmployeeAvatarInteractive: FC<EmployeeAvatarInteractivePropsT> = ({
                         flexDirection="column"
                         alignItems="center"
                     >
-                        <Typography fontSize={18} fontWeight="bold">
-                            {data.english_name}
-                        </Typography>
+                        <Box display={"flex"} gap={1}>
+                            <Typography fontSize={18} fontWeight="bold">
+                                {data.english_name}
+                            </Typography>
+                            <Box>
+                                <EmployeeDoneTaskScore
+                                    score={data.done_task_score}
+                                />
+                            </Box>
+                        </Box>
 
                         <Typography fontSize={18}>
                             {data.native_name}

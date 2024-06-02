@@ -196,6 +196,7 @@ export type EmployeeT = {
     probation_period_justification?: string | null;
     dismissal_reason?: string;
     today_schedule_status: DayT;
+    done_task_score: number;
     pool: SelectOptionT | null;
 };
 
