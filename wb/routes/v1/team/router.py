@@ -37,6 +37,7 @@ from wb.services import (
     get_teams_members_history,
 )
 from wb.services.counteragent import list_counteragents_by_team
+from wb.services.done_tasks import get_done_task_score
 from wb.utils.current_user import current_employee
 from wb.utils.db import resolve_db_id, resolve_db_ids, resolve_db_ids_to_dict
 from wb.utils.query import (
@@ -349,11 +350,14 @@ async def get_team_members(
     employees_days = await get_employees_days_status(
         employees, today, today, session=session
     )
+    employees_done_task_scores = await get_done_task_score(employees, session=session)
     items = []
     for emp in employees:
         output_model_class = get_employee_output_model_class(emp)
         emp_out = output_model_class.from_obj(
-            emp, today_schedule_status=employees_days[emp.id][today]
+            emp,
+            today_schedule_status=employees_days[emp.id][today],
+            done_task_score=employees_done_task_scores[emp.id],
         )
         items.append(emp_out)
     return make_list_output(
