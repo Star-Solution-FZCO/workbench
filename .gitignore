@@ -3,6 +3,8 @@ STORAGE
 .idea/
 __pycache__
 .mypy_cache/
+.banned_words.txt
+BANNED_WORDS_DICT
 
 data
 # MacOS
