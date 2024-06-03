@@ -48,7 +48,7 @@ class DoneTaskSummaryItem:
             'score': 0,
         },
         'cvs_commits': {
-            'source_type': m.ActivitySourceType.GERRIT,
+            'source_type': m.ActivitySourceType.CVS,
             'task_type': 'COMMIT',
             'score': 0.25,
         },
