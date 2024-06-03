@@ -1,0 +1,2 @@
+CVE-2024-33663 # not applicable: we only use the HS256 algorithm
+CVE-2024-33664 # not applicable: we only use a signature verification, not the encryption
