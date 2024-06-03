@@ -36,6 +36,17 @@ sec-trivy-src-scan:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 
+sec-gitleaks:
+  stage: lint
+  image:
+    name: zricethezav/gitleaks:latest
+    entrypoint: [""]
+  script:
+    - gitleaks detect
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+
 .template-login-internal-registry: &template-login-internal-registry
   - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
 
