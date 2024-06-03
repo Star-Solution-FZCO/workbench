@@ -24,6 +24,18 @@ lint-frontend:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
+
+sec-trivy-src-scan:
+  stage: lint
+  image:
+    name: aquasec/trivy:latest
+    entrypoint: [""]
+  script:
+    - trivy fs --exit-code 1 --no-progress --show-suppressed --scanners vuln .
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+
 .template-login-internal-registry: &template-login-internal-registry
   - echo "$CI_REGISTRY_PASSWORD" | docker login $CI_REGISTRY -u $CI_REGISTRY_USER --password-stdin
 
