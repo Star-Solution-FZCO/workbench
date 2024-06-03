@@ -117,7 +117,9 @@ def create_csv(
 
 async def send_reports(start: date, end: date) -> None:
     # pylint: disable=too-many-locals
-    jinja_env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
+    jinja_env = Environment(
+        loader=FileSystemLoader(os.path.dirname(__file__)), autoescape=True
+    )
     jinja_template = jinja_env.get_template('activityReport.html.jinja2')
     async with multithreading_safe_async_session() as session:
         employees_raw = await session.scalars(

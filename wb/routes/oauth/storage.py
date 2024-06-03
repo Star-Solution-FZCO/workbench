@@ -170,7 +170,7 @@ class Storage(BaseStorage):  # pylint: disable=abstract-method
     ) -> AuthorizationCode | None:
         if not (cached_auth_code := await self.redis.get(f'oauth-code-{code}')):
             return None
-        auth_code_record: AuthorizationCode = pickle.loads(cached_auth_code)
+        auth_code_record: AuthorizationCode = pickle.loads(cached_auth_code)  # nosec pickle
         return auth_code_record
 
     async def delete_authorization_code(

@@ -30,7 +30,8 @@ router = APIRouter(prefix='/oauth')
 
 
 jinja_env = Environment(
-    loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates'))
+    loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
+    autoescape=True,
 )
 
 

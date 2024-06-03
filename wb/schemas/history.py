@@ -20,7 +20,7 @@ class FieldHistoryItem(BaseModel):
     def from_obj(cls, obj: 'm.AuditEntry', field: str) -> Self:
         if field not in obj.fields:
             raise KeyError(f'Field "{field}" not found in audit entry')
-        unpacked_data = pickle.loads(obj.data)
+        unpacked_data = pickle.loads(obj.data)  # nosec pickle
         return cls(
             audit_id=obj.id,
             time=obj.time,

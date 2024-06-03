@@ -57,7 +57,9 @@ def verify_service_user_jwt(token: str, request: Request) -> str:
     if 'req_hash' not in data:
         raise HTTPException(HTTPStatus.UNAUTHORIZED, 'req_hash claim is required')
     url_path = request.url.path + ('?' + request.url.query if request.url.query else '')
-    real_req_hash = sha1((request.method + url_path).encode('utf-8')).hexdigest()
+    real_req_hash = sha1(
+        (request.method + url_path).encode('utf-8'), usedforsecurity=False
+    ).hexdigest()
     if data['req_hash'] != real_req_hash:
         raise HTTPException(
             HTTPStatus.UNAUTHORIZED,

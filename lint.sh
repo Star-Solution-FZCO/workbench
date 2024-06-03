@@ -6,3 +6,4 @@ if [ -z ${PYLINT_CPU_COUNT} ]; then
 fi
 XDG_CACHE_HOME=/tmp/pylint python3 -m pylint -j ${PYLINT_CPU_COUNT} wb shared_utils || exit 1;
 python3 migrations/verify_versions.py || exit 1;
+python3 -m bandit -r . || exit 1;

@@ -37,5 +37,6 @@ class AuditEntry(BaseDBModel):
     @validates('action')
     # pylint: disable-next=unused-argument
     def _validate_action(self, key: Any, action: str) -> str:
-        assert action in ACTIONS
+        if action not in ACTIONS:
+            raise ValueError(f'Invalid action: {action}')
         return action

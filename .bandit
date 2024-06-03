@@ -1,3 +1,7 @@
 [bandit]
 exclude = ./tests,./contrib,./migrations,./frontend
-skips = B101,B301,B403,B405
+skips = B310,B403,B405,B410
+# B310: urllib_urlopen
+# B403: import_pickle
+# B405: import_xml_etree
+# B410: import_lxml
