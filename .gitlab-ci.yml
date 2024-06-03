@@ -11,7 +11,7 @@ lint-backend:
   stage: lint
   script:
     - docker build -t $CI_PROJECT_NAME-backend:test-$CI_JOB_ID --target test -f Dockerfile .
-    - docker run --rm $CI_PROJECT_NAME-backend:test-$CI_JOB_ID
+    - docker run --rm -v $BANNED_WORDS_DICT:/tmp/bw.txt -e BANNED_WORDS_DICT='/tmp/bw.txt'  $CI_PROJECT_NAME-backend:test-$CI_JOB_ID
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 

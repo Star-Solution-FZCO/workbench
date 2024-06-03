@@ -150,3 +150,6 @@ cython_debug/
 
 # NodeJS modules
 frontend/node_modules
+
+.banned_words.txt
+BANNED_WORDS_DICT
