@@ -54,7 +54,7 @@ class EncryptedObject(sa.TypeDecorator[T]):
         if value is None:
             return None
         fernet = Fernet(self.__passphrase)
-        return t.cast(T, pickle.loads(fernet.decrypt(value)))
+        return t.cast(T, pickle.loads(fernet.decrypt(value)))  # nosec pickle
 
     def process_literal_param(self, value: T | None, dialect: sa.Dialect) -> str:
         processor = self.impl_instance.literal_processor(dialect)

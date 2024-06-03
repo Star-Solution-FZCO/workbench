@@ -110,4 +110,6 @@ class CVSConnector(Connector):
 
 
 def _gen_commit_id(c: dict) -> str:
-    return sha1(f'{c["author"]}{c["repo"]}{c["timestamp"]}'.encode()).hexdigest()
+    return sha1(
+        f'{c["author"]}{c["repo"]}{c["timestamp"]}'.encode(), usedforsecurity=False
+    ).hexdigest()

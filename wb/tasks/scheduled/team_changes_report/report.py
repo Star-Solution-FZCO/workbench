@@ -50,7 +50,7 @@ async def _send_team_changes_report(start: date, end: date) -> None:
             )
         )
         for rec in employees_team_changes.all():
-            if not (changes := pickle.loads(rec.data).get('team_id')):
+            if not (changes := pickle.loads(rec.data).get('team_id')):  # nosec pickle
                 continue
             added = changes.get('added')
             deleted = changes.get('deleted')
@@ -79,7 +79,9 @@ async def _send_team_changes_report(start: date, end: date) -> None:
                 session=session,
             )
         }
-        jinja_env = Environment(loader=FileSystemLoader(os.path.dirname(__file__)))
+        jinja_env = Environment(
+            loader=FileSystemLoader(os.path.dirname(__file__)), autoescape=True
+        )
         jinja_template = jinja_env.get_template('teamChangeReport.html.jinja2')
         msg = jinja_template.render(
             recs=[

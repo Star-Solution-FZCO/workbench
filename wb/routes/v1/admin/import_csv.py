@@ -239,7 +239,7 @@ async def approve_import(
     redis: AsyncRedis = Depends(get_redis_session),
 ) -> BaseOutput:
     packed_changes = await redis.get(f'import-{id}')
-    changes = pickle.loads(packed_changes)
+    changes = pickle.loads(packed_changes)  # nosec pickle
     for uid, user_change in changes.items():
         user: Optional['m.Employee'] = await session.scalar(
             sa.select(m.Employee)

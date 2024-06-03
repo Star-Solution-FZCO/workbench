@@ -278,7 +278,7 @@ async def _get_team_history(
         )
     )
     for rec in team_changes.all():
-        unpacked_data = pickle.loads(rec.data)  # type: ignore
+        unpacked_data = pickle.loads(rec.data)  # type: ignore  # nosec pickle
         if manager_changes := unpacked_data.get('manager_id'):
             u = (
                 cast(

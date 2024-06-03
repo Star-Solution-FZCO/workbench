@@ -34,7 +34,7 @@ def _read_rsa_cert(cert: x509.Certificate) -> str:
 
 
 def _gen_fingerprint(cert: x509.Certificate) -> str:
-    return hashlib.sha1(cert.tbs_certificate_bytes).hexdigest()
+    return hashlib.sha1(cert.tbs_certificate_bytes, usedforsecurity=False).hexdigest()
 
 
 def _int_to_base64url(num: int) -> str:
@@ -49,7 +49,7 @@ _cert = x509.load_pem_x509_certificate(
 )
 JWS_DATA = {
     'x5c': base64.b64encode(_cert.public_bytes(Encoding.DER)).decode('utf-8'),
-    'x5t': hashlib.sha1(_cert.tbs_certificate_bytes).hexdigest(),
+    'x5t': hashlib.sha1(_cert.tbs_certificate_bytes, usedforsecurity=False).hexdigest(),
     'e': _int_to_base64url(_cert.public_key().public_numbers().e),
     'n': _int_to_base64url(_cert.public_key().public_numbers().n),
 }

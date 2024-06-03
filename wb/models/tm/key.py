@@ -30,7 +30,7 @@ class EmployeeTM(BaseDBModel):
 
     @staticmethod
     def hash_key(key: str) -> str:
-        md5_hash = hashlib.md5(key.encode('utf-8')).hexdigest().encode('utf-8')
+        md5_hash = hashlib.md5(key.encode('utf-8')).hexdigest().encode('utf-8')  # nosec hashlib
         return bcrypt.hashpw(md5_hash, bcrypt.gensalt()).decode('utf-8')
 
     def set_key(self, key: str) -> None:
@@ -40,4 +40,4 @@ class EmployeeTM(BaseDBModel):
         return bcrypt.checkpw(key_md5.encode('utf-8'), self.key_hash.encode('utf-8'))
 
     def check_key(self, key: str) -> bool:
-        return self.check_key_md5(hashlib.md5(key.encode('utf-8')).hexdigest())
+        return self.check_key_md5(hashlib.md5(key.encode('utf-8')).hexdigest())  # nosec hashlib

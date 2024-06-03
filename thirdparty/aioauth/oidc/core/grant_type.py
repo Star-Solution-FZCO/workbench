@@ -58,7 +58,7 @@ class AuthorizationCodeGrantType(OAuth2AuthorizationCodeGrantType[TRequest, TSto
 
         if TYPE_CHECKING:
             # validate_request will have already ensured the request includes a code.
-            assert request.post.code is not None
+            assert request.post.code is not None  # nosec assert_used
 
         authorization_code = await self.storage.get_authorization_code(
             request=request,
@@ -68,7 +68,7 @@ class AuthorizationCodeGrantType(OAuth2AuthorizationCodeGrantType[TRequest, TSto
 
         if TYPE_CHECKING:
             # validate_request will have already ensured the code was valid.
-            assert authorization_code is not None
+            assert authorization_code is not None  # nosec assert_used
 
         request.user = authorization_code.user
 

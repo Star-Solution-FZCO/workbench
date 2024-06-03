@@ -33,7 +33,7 @@ async def get_teams_members_history(
         )
     )
     for rec in employees_team_changes.all():
-        if not (changes := pickle.loads(rec.data).get('team_id')):  # type: ignore
+        if not (changes := pickle.loads(rec.data).get('team_id')):  # type: ignore  # nosec pickle
             continue
         for team_id in changes.get('added', []):
             results.append(

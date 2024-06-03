@@ -25,4 +25,4 @@ class PickleSerializer(BaseSerializer):
 
     # noinspection PyMethodMayBeStatic
     def loads(self, value: bytes) -> Any:
-        return pickle.loads(value)
+        return pickle.loads(value)  # nosec pickle
