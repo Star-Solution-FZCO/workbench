@@ -4,16 +4,10 @@ import { FC } from "react";
 const scoreToSymbol = (score: number) => {
     if (score <= 0) {
         return "🔳";
-    } else if (score < 6) {
-        return "🟥";
-    } else if (score < 12) {
+    } else if (score < 15) {
         return "🟧";
-    } else if (score < 18) {
-        return "🟨";
-    } else if (score < 24) {
-        return "🟦";
     } else if (score < 30) {
-        return "🟪";
+        return "🟨";
     } else {
         return "🟩";
     }
