@@ -23,7 +23,6 @@ __all__ = (
     'EmployeeHistoryRecordOut',
     'EmployeeTMKeyUpdateOut',
     'EmployeeUpdate',
-    'EmployeeRegisterOut',
 )
 
 
@@ -116,7 +115,3 @@ class EmployeeHierarchyOut(BaseModel):
             attributes=obj['attributes'],
             children=[cls.from_obj(child) for child in obj['children']],
         )
-
-
-class EmployeeRegisterOut(BaseModel):
-    register_token: str

@@ -6,7 +6,7 @@ import SummarizeIcon from "@mui/icons-material/Summarize";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import { Badge, Box, IconButton, Tooltip, Typography } from "@mui/material";
-import { AvatarField, Clipboard, Modal } from "_components";
+import { AvatarField, Modal } from "_components";
 import ActivitySourceAliasesList from "_components/activity_source_aliases_list";
 import { DismissSubmitDialog } from "_components/dismiss";
 import WatchModal from "_components/watch_modal";
@@ -15,6 +15,7 @@ import { today, weekAgo } from "config";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { FC, useState } from "react";
 import { createSearchParams, useMatch, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import { ApiResponse, EmployeeT } from "types";
 import { toastError } from "utils";
 import { storageUrl } from "utils/url";
@@ -54,9 +55,6 @@ const UserInfo: FC<{
         useState(false);
     const [openOrgStructure, setOpenOrgStructure] = useState(false);
 
-    const [shownRegisterUserToken, setShownRegisterUserToken] = useState<
-        string | null
-    >(null);
     const [registerUser] = employeesApi.useRegisterEmployeeMutation();
 
     const profile = useAppSelector(({ profile }) => profile.payload);
@@ -85,8 +83,8 @@ const UserInfo: FC<{
     const handleRegister = () => {
         registerUser(data.id)
             .unwrap()
-            .then((res) => {
-                setShownRegisterUserToken(res.payload.register_token);
+            .then(() => {
+                toast.success("Registration token has been sent to the user");
             })
             .catch((error) => {
                 toastError(error);
@@ -134,14 +132,6 @@ const UserInfo: FC<{
             >
                 <EmployeeOrgStructure employee={data} />
             </Modal>
-
-            {shownRegisterUserToken && (
-                <Clipboard
-                    open
-                    value={shownRegisterUserToken}
-                    onClose={() => setShownRegisterUserToken(null)}
-                />
-            )}
 
             <Box display="flex" flexDirection="row" alignItems="center" gap={2}>
                 <Badge

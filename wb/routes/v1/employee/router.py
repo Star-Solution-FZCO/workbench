@@ -1,6 +1,7 @@
 import asyncio
 import csv
 import io
+import os
 import re
 import secrets
 from datetime import date, datetime, timedelta
@@ -11,6 +12,7 @@ import jwt
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
+from jinja2 import Environment, FileSystemLoader
 from sqlalchemy.exc import IntegrityError, NoResultFound
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -36,6 +38,7 @@ from wb.schemas import (
     SelectOutput,
     SelectParams,
     ShortEmployeeOut,
+    SuccessOutput,
     get_employee_csv_fields,
     get_employee_output_model_class,
 )
@@ -53,6 +56,7 @@ from wb.services.notifications import (
     NotificationDestinationTeam,
     NotificationMessage,
 )
+from wb.tasks.send import task_send_email
 from wb.utils.current_user import current_employee
 from wb.utils.db import count_select_query_results, resolve_db_id, resolve_db_ids
 from wb.utils.email import check_email_domain
@@ -72,7 +76,6 @@ from .schemas import (
     EmployeeDaysStatusOut,
     EmployeeDayStatusOut,
     EmployeeHierarchyOut,
-    EmployeeRegisterOut,
     EmployeeTMKeyUpdateOut,
     EmployeeUpdate,
 )
@@ -792,7 +795,7 @@ async def set_tm_key(
 async def register_user(
     employee_id: EmployeeIDParamT,
     session: AsyncSession = Depends(get_db_session),
-) -> BasePayloadOutput[EmployeeRegisterOut]:
+) -> SuccessOutput:
     if CONFIG.AUTH_MODE != AuthModeT.LOCAL:
         raise HTTPException(
             HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
@@ -811,8 +814,19 @@ async def register_user(
     register_token = jwt.encode(
         register_token_data, CONFIG.JWT_SECRET, algorithm='HS256'
     )
-    return make_success_output(
-        payload=EmployeeRegisterOut(
-            register_token=register_token,
-        )
+    jinja_env = Environment(
+        loader=FileSystemLoader(os.path.join(os.path.dirname(__file__), 'templates')),
+        autoescape=True,
     )
+    template = jinja_env.get_template('registration_email.html.jinja2')
+    task_send_email.delay(
+        sender=CONFIG.SMTP_SENDER,
+        recipients=[emp.email],
+        subject='Workbench registration',
+        body=template.render(
+            public_base_url=CONFIG.PUBLIC_BASE_URL,
+            employee=emp,
+            register_token=register_token,
+        ),
+    )
+    return SuccessOutput()
