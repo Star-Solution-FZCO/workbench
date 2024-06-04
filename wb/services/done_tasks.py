@@ -8,7 +8,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
 from shared_utils.dateutils import date_range
-from wb.constants import DONE_TASKS_SCORE_PERIOD
 
 __all__ = (
     'get_done_task_summary',
