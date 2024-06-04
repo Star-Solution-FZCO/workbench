@@ -5,8 +5,8 @@ import { sharedApi } from "_redux";
 import { FC } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
-import { PasswordSetT } from "../../../../../types";
-import { genRules } from "../../../../../utils";
+import { PasswordSetT } from "types";
+import { genRules } from "utils";
 
 interface IPasswordSetDialogProps {
     open: boolean;
