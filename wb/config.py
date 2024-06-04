@@ -203,4 +203,9 @@ API_KEYS = parse_api_keys(CONFIG.api_keys)
 
 if CONFIG.DEV_MODE:
     CONFIG.SEND_NOTIFICATION_TO_CONSOLE = True
-    CONFIG.AUTH_MODE = AuthModeT.DEV
+    # For development purposes, we allow to use dev mode only with dev or local auth mode
+    CONFIG.AUTH_MODE = (
+        AuthModeT.DEV
+        if CONFIG.AUTH_MODE not in (AuthModeT.DEV, AuthModeT.LOCAL)
+        else CONFIG.AUTH_MODE
+    )
