@@ -224,10 +224,6 @@ EMPLOYEE_FIELD_ACL: dict[str, FieldACL[m.Employee]] = {
         edit=frozenset(),
         view=frozenset({'super_admin', 'super_hr', 'hr'}),
     ),
-    'done_task_score': FieldACL(
-        edit=frozenset(),
-        view=frozenset({'all'}),
-    ),
 }
 
 

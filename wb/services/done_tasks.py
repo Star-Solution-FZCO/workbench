@@ -13,7 +13,6 @@ from wb.constants import DONE_TASKS_SCORE_PERIOD
 __all__ = (
     'get_done_task_summary',
     'get_done_task_summary_by_day',
-    'get_done_task_score',
     'DoneTaskSummaryItem',
 )
 
@@ -21,7 +20,7 @@ __all__ = (
 class DoneTaskSummaryField(TypedDict):
     source_type: m.ActivitySourceType
     task_type: str
-    score: float
+    weight: float
 
 
 @dataclass
@@ -35,22 +34,22 @@ class DoneTaskSummaryItem:
         'youtrack_issues': {
             'source_type': m.ActivitySourceType.YOUTRACK,
             'task_type': 'RESOLVED_ISSUE',
-            'score': 1,
+            'weight': 1,
         },
         'gerrit_commits': {
             'source_type': m.ActivitySourceType.GERRIT,
             'task_type': 'MERGED_COMMIT',
-            'score': 1,
+            'weight': 1,
         },
         'gerrit_comments': {
             'source_type': m.ActivitySourceType.GERRIT,
             'task_type': 'COMMENT',
-            'score': 0,
+            'weight': 0,
         },
         'cvs_commits': {
             'source_type': m.ActivitySourceType.CVS,
             'task_type': 'COMMIT',
-            'score': 0.25,
+            'weight': 0.25,
         },
     }
 
@@ -62,9 +61,10 @@ class DoneTaskSummaryItem:
             ):
                 setattr(self, field, getattr(self, field) + 1)
 
-    def get_score(self) -> float:
+    @property
+    def weighted_sum(self) -> float:
         return sum(
-            getattr(self, field) * annotation['score']
+            getattr(self, field) * annotation['weight']
             for field, annotation in self.__fields_annotation__.items()
         )
 
@@ -112,13 +112,3 @@ async def get_done_task_summary_by_day(
         results[task.employee_id][task.time.date()].add_task(task)
 
     return results
-
-
-async def get_done_task_score(
-    employees: Sequence[m.Employee],
-    session: AsyncSession,
-) -> dict[int, float]:
-    end = date.today()
-    start = end - timedelta(days=DONE_TASKS_SCORE_PERIOD)
-    summary = await get_done_task_summary(employees, start, end, session)
-    return {emp.id: summary[emp.id].get_score() for emp in employees}
