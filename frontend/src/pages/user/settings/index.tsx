@@ -19,7 +19,7 @@ const Settings: FC = () => {
 
     const currentTab = tab || "api_token";
 
-    const is_local_auth = AUTH_MODE === "local";
+    const isLocalAuth = AUTH_MODE === "local";
 
     const [shownChangedTMKey, setShownChangedTMKey] = useState<string | null>(
         null,
@@ -64,7 +64,7 @@ const Settings: FC = () => {
                             <Tab label="API Tokens" value="api_token" />
                             <Tab label="OTP" value="otp" />
                             <Tab label="TM Key" value="tm_key" />
-                            {is_local_auth && (
+                            {isLocalAuth && (
                                 <Tab label="Password" value="password" />
                             )}
                         </TabList>
@@ -99,7 +99,7 @@ const Settings: FC = () => {
                         </Button>
                     </Box>
                 </TabPanel>
-                {is_local_auth && (
+                {isLocalAuth && (
                     <TabPanel value="password" sx={{ px: 2 }}>
                         <PasswordPage />
                     </TabPanel>

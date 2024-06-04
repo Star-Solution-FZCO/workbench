@@ -20,13 +20,11 @@ const PasswordView = () => {
 
     return (
         <Box display="flex" flexDirection="column" gap={1}>
-            {modalOpen && (
-                <PasswordSetDialog
-                    open={true}
-                    onClose={() => setModalOpen(false)}
-                    onSuccess={handleSuccess}
-                />
-            )}
+            <PasswordSetDialog
+                open={modalOpen}
+                onClose={() => setModalOpen(false)}
+                onSuccess={handleSuccess}
+            />
             <Box display="flex" alignItems="center" gap={1}>
                 <Button
                     onClick={() => {

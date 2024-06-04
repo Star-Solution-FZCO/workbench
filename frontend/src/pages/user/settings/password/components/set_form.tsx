@@ -6,7 +6,7 @@ import { FC } from "react";
 import { FormProvider, useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { PasswordSetT } from "types";
-import { genRules } from "utils";
+import { genRules, toastError } from "utils";
 
 interface IPasswordSetDialogProps {
     open: boolean;
@@ -14,43 +14,39 @@ interface IPasswordSetDialogProps {
     onSuccess: () => void;
 }
 
-const passwordSetInitialState: PasswordSetT = {
-    otp_code: "",
-    password: "",
-};
-
 export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
     open,
     onClose,
     onSuccess,
 }) => {
     const methods = useForm<PasswordSetT>({
-        defaultValues: passwordSetInitialState,
+        defaultValues: {
+            otp_code: "",
+            password: "",
+        },
     });
     const [setPassword, { isLoading }] = sharedApi.useSetPasswordMutation();
 
-    const handleOnSubmit = (formData: PasswordSetT) => {
-        if (formData.otp_code === "" || formData.password === "") {
-            toast.error("All fields are required.");
-            return;
-        }
+    const handleClose = () => {
+        methods.reset();
+        onClose();
+    };
 
+    const handleOnSubmit = (formData: PasswordSetT) => {
         setPassword(formData)
             .unwrap()
             .then(() => {
                 toast.success("Password has been changed.");
                 onSuccess();
-                onClose();
+                handleClose();
             })
             .catch((error) => {
-                toast.error(
-                    error.detail || error.message || error.data?.detail,
-                );
+                toastError(error);
             });
     };
 
     return (
-        <Modal open={open} onClose={onClose}>
+        <Modal open={open} onClose={handleClose}>
             <Typography component="h1" variant="h5">
                 Set new password
             </Typography>
