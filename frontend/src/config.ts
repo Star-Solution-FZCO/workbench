@@ -132,6 +132,11 @@ export const monthAgo = () => {
     d.setMonth(d.getMonth() - 1);
     return d;
 };
+export const nDaysAgo = (n: number) => {
+    const d = new Date();
+    d.setDate(d.getDate() - n);
+    return d;
+};
 
 export const API_BASE_URL =
     (window as any)?.env?.API_BASE_URL || import.meta.env.VITE_API_BASE_URL;

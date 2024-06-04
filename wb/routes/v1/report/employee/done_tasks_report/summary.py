@@ -71,6 +71,7 @@ async def generate_done_tasks_summary_report(
                             working_days=1
                             if days_status[emp.id][day].is_working_day()
                             else 0,
+                            weighted_sum=day_stats.weighted_sum,
                         ),
                         day_status=days_status[emp.id][day],
                         has_activity=days_activity_status[emp.id][day],
@@ -110,6 +111,7 @@ async def generate_done_tasks_summary_report(
                             )
                         )
                     ),
+                    weighted_sum=sum(s.weighted_sum for s in stats[emp.id].values()),
                 ),
             )
         )

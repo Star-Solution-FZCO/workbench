@@ -196,7 +196,6 @@ export type EmployeeT = {
     probation_period_justification?: string | null;
     dismissal_reason?: string;
     today_schedule_status: DayT;
-    done_task_score: number;
     pool: SelectOptionT | null;
 };
 
@@ -1363,6 +1362,7 @@ export type DoneTasksSummaryItemT = {
     vacations: number;
     sick_days: number;
     working_days: number;
+    weighted_sum: number;
 };
 
 export type DoneTasksSummaryTotalT = {

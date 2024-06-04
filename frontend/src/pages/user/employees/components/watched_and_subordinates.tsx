@@ -11,12 +11,7 @@ import {
 } from "@mui/material";
 import { GridColDef, GridEventListener, GridSortModel } from "@mui/x-data-grid";
 import { DataGridPro } from "@mui/x-data-grid-pro";
-import {
-    Employee,
-    EmployeeDoneTaskScore,
-    ListStateT,
-    initialListState,
-} from "_components";
+import { Employee, ListStateT, initialListState } from "_components";
 import DayTypeIconButton from "_components/day_type_icon";
 import WatchModal from "_components/watch_modal";
 import { employeesApi } from "_redux";
@@ -123,7 +118,6 @@ const WatchedAndSubordinates: FC<IWatchedAndSubordinatesProps> = ({ id }) => {
                         height="100%"
                         gap={1}
                     >
-                        <EmployeeDoneTaskScore score={row.done_task_score} />
                         <DayTypeIconButton
                             id={row.id}
                             dayType={row.today_schedule_status}

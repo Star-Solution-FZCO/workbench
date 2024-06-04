@@ -182,21 +182,18 @@ export const EmployeeAvatarInteractive: FC<EmployeeAvatarInteractivePropsT> = ({
                         flexDirection="column"
                         alignItems="center"
                     >
-                        <Box display={"flex"} gap={1}>
-                            <Typography fontSize={18} fontWeight="bold">
-                                {data.english_name}
-                            </Typography>
-                            <Box>
-                                <EmployeeDoneTaskScore
-                                    score={data.done_task_score}
-                                />
-                            </Box>
-                        </Box>
+                        <Typography fontSize={18} fontWeight="bold">
+                            {data.english_name}
+                        </Typography>
 
                         <Typography fontSize={18}>
                             {data.native_name}
                         </Typography>
                     </Box>
+                </Box>
+
+                <Box>
+                    <EmployeeDoneTaskScore employeeId={employee.id} />
                 </Box>
 
                 <Box display="flex" flexDirection="column" gap="4px">

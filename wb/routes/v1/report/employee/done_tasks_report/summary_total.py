@@ -73,6 +73,7 @@ async def generate_done_tasks_summary_total_report(
                             )
                         )
                     ),
+                    weighted_sum=stats[emp.id].weighted_sum,
                 ),
             )
         )

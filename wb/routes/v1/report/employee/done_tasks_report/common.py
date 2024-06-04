@@ -13,3 +13,4 @@ class ReportItem(BaseReportItem):
     vacations: int = Field(title='Vacations', default=0)
     sick_days: int = Field(title='Sick days', default=0)
     working_days: int = Field(title='Working days', default=0)
+    weighted_sum: float = Field(title='Weighted sum', default=0)
