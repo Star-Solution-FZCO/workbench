@@ -1382,3 +1382,8 @@ export type DoneTasksSummaryT = {
     >;
     total: DoneTasksSummaryItemT;
 };
+
+export type PasswordSetT = {
+    otp_code: string;
+    password: string;
+};

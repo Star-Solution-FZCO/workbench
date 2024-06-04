@@ -3,11 +3,13 @@ import { TabContext, TabList, TabPanel } from "@mui/lab";
 import { Box, Button, Tab, Typography } from "@mui/material";
 import { Clipboard, Title } from "_components";
 import { sharedApi, useAppSelector } from "_redux";
+import { AUTH_MODE } from "config";
 import { FC, useCallback, useState } from "react";
 import { Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { toastError } from "utils";
 import APIToken from "./api_token";
 import OTPPage from "./otp";
+import PasswordPage from "./password";
 
 const Settings: FC = () => {
     const { tab } = useParams();
@@ -16,6 +18,8 @@ const Settings: FC = () => {
     const profile = useAppSelector(({ profile }) => profile.payload);
 
     const currentTab = tab || "api_token";
+
+    const is_local_auth = AUTH_MODE === "local";
 
     const [shownChangedTMKey, setShownChangedTMKey] = useState<string | null>(
         null,
@@ -60,6 +64,9 @@ const Settings: FC = () => {
                             <Tab label="API Tokens" value="api_token" />
                             <Tab label="OTP" value="otp" />
                             <Tab label="TM Key" value="tm_key" />
+                            {is_local_auth && (
+                                <Tab label="Password" value="password" />
+                            )}
                         </TabList>
                     </Box>
                 </Box>
@@ -92,6 +99,11 @@ const Settings: FC = () => {
                         </Button>
                     </Box>
                 </TabPanel>
+                {is_local_auth && (
+                    <TabPanel value="password" sx={{ px: 2 }}>
+                        <PasswordPage />
+                    </TabPanel>
+                )}
             </TabContext>
         </>
     );

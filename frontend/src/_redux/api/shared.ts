@@ -12,6 +12,7 @@ import {
     NotificationT,
     OTPStatusT,
     OTPTokenT,
+    PasswordSetT,
     SelectOptionT,
     UpdateChangelogT,
     UpdateNotificationT,
@@ -224,6 +225,13 @@ export const sharedApi = createApi({
                 method: "POST",
                 body,
                 formData: true,
+            }),
+        }),
+        setPassword: build.mutation<ApiResponse<null>, PasswordSetT>({
+            query: (body) => ({
+                url: `${apiVersion}/settings/password`,
+                method: "POST",
+                body,
             }),
         }),
     }),
