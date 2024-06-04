@@ -515,10 +515,7 @@ export const employeesApi = createApi({
             }),
             invalidatesTags: ["CounteragentsCredentialsList"],
         }),
-        registerEmployee: build.mutation<
-            ApiResponse<{ register_token: string }>,
-            number
-        >({
+        registerEmployee: build.mutation<ApiResponse<null>, number>({
             query: (id) => ({
                 url: `${apiVersion}/employee/${id}/register`,
                 method: "PUT",

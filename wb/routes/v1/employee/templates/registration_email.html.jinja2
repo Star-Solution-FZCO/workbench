@@ -1,0 +1,10 @@
+<pre>
+Dear {{ employee.english_name }}!
+You were registered in the <a href="{{ public_base_url }}">Workbench</a> system.
+Your login: {{ employee.account }}
+To complete the registration, please follow the link below and create a password using the registration code.
+<br>
+<a href="{{ public_base_url }}/register">Complete registration</a>
+<br>
+Your registration code: <span style="color: #999999;">{{ register_token }}</span>
+</pre>
