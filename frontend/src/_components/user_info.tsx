@@ -11,7 +11,7 @@ import ActivitySourceAliasesList from "_components/activity_source_aliases_list"
 import { DismissSubmitDialog } from "_components/dismiss";
 import WatchModal from "_components/watch_modal";
 import { employeesApi, useAppSelector } from "_redux";
-import { today, weekAgo } from "config";
+import { AUTH_MODE, today, weekAgo } from "config";
 import { endOfWeek, format, startOfWeek } from "date-fns";
 import { FC, useState } from "react";
 import { createSearchParams, useMatch, useNavigate } from "react-router-dom";
@@ -45,6 +45,7 @@ const UserInfo: FC<{
     const { payload: data } = responseData;
 
     const isProfilePage = useMatch("/profile/*");
+    const isLocalAuth = AUTH_MODE === "local";
 
     const [openDismissEmployeeWindow, setOpenDismissEmployeeWindow] =
         useState(false);
@@ -261,7 +262,7 @@ const UserInfo: FC<{
                             </IconButton>
                         </Tooltip>
 
-                        {profile.admin && (
+                        {profile.admin && isLocalAuth && (
                             <Tooltip title="Register user">
                                 <IconButton
                                     sx={{
