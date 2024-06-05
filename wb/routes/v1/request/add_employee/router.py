@@ -502,7 +502,7 @@ async def approve_add_employee_request(  # pylint: disable=too-many-branches, to
 async def cancel_add_employee_request(
     request_id: int,
     session: AsyncSession = Depends(get_db_session),
-    calendar: CalDAVClient | None = Depends(CalDAVClient),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
 ) -> BaseModelIdOutput:
     curr_user = current_employee()
     user_roles = set(curr_user.roles)
