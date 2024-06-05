@@ -4,8 +4,8 @@ import { formatInTimeZone } from "date-fns-tz";
 import { capitalize } from "lodash";
 import { FC } from "react";
 import { DoneTasksSummaryT } from "types";
-import { weightedSumGradientColor } from "utils";
-import { ReportOutputWrapper } from "../report_output_wrapper.tsx";
+import { weightedSumDayColor } from "utils";
+import { ReportOutputWrapper } from "../report_output_wrapper";
 
 interface IDoneTasksSummaryProps {
     data: DoneTasksSummaryT;
@@ -54,8 +54,9 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                     <tr
                         key={day}
                         style={{
-                            background: weightedSumGradientColor(
+                            background: weightedSumDayColor(
                                 data.item.weighted_sum,
+                                data.day_status,
                             ),
                         }}
                         tabIndex={0}

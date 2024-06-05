@@ -1,16 +1,17 @@
 import { Box, LinearProgress, Tooltip } from "@mui/material";
 import { reportsApi } from "_redux";
-import { nDaysAgo, today } from "config";
+import { nDaysAgo } from "config";
+import { capitalize } from "lodash";
 import { FC } from "react";
-import { weightedSumGradientColor } from "utils";
+import { weightedSumDayColor } from "utils";
 import { formatDateHumanReadable } from "utils/convert";
 
 export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
     employeeId,
 }) => {
     const { data, isLoading } = reportsApi.useGetDoneTasksSummaryReportQuery({
-        start: nDaysAgo(13).toISOString().substring(0, 10),
-        end: today().toISOString().substring(0, 10),
+        start: nDaysAgo(14).toISOString().substring(0, 10),
+        end: nDaysAgo(1).toISOString().substring(0, 10),
         filter: `id: ${employeeId}`,
     });
 
@@ -41,16 +42,17 @@ export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
                             ([key, data]) => (
                                 <td id={key}>
                                     <Tooltip
-                                        title={`${formatDateHumanReadable(key)}: ${data.item.weighted_sum}`}
+                                        title={`${formatDateHumanReadable(key)}: ${data.item.weighted_sum} (${capitalize(data.day_status.split("_").join(" "))})`}
                                     >
                                         <div
                                             style={{
-                                                minWidth: "12px",
-                                                minHeight: "12px",
-                                                background:
-                                                    weightedSumGradientColor(
-                                                        data.item.weighted_sum,
-                                                    ),
+                                                minWidth: "14px",
+                                                minHeight: "14px",
+                                                background: weightedSumDayColor(
+                                                    data.item.weighted_sum,
+                                                    data.day_status,
+                                                ),
+                                                border: "1px solid #ddd",
                                             }}
                                         />
                                     </Tooltip>

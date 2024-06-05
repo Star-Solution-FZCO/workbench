@@ -192,11 +192,16 @@ export const EmployeeAvatarInteractive: FC<EmployeeAvatarInteractivePropsT> = ({
                     </Box>
                 </Box>
 
-                <Box>
-                    <EmployeeDoneTaskScore employeeId={employee.id} />
-                </Box>
-
                 <Box display="flex" flexDirection="column" gap="4px">
+                    <Box
+                        display={"flex"}
+                        flexDirection={"row"}
+                        alignItems={"center"}
+                    >
+                        <Typography>Tasks: </Typography>
+                        <EmployeeDoneTaskScore employeeId={employee.id} />
+                    </Box>
+
                     <Typography>
                         E-Mail:{" "}
                         <a href={`mailto:${data.email}`}>{data.email}</a>
