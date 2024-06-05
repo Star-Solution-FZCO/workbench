@@ -30,6 +30,7 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                     <th>Vacations</th>
                     <th>Sick days</th>
                     <th>Working days</th>
+                    <th>Weighted sum</th>
                 </tr>
             </thead>
 
@@ -46,6 +47,9 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                         <td>{record.item.vacations}</td>
                         <td>{record.item.sick_days}</td>
                         <td>{record.item.working_days}</td>
+                        <td>
+                            <strong>{record.item.weighted_sum}</strong>
+                        </td>
                     </tr>
                 ))}
             </tbody>

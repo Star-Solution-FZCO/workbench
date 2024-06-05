@@ -1,12 +1,10 @@
 import { Employee } from "_components/employee";
 import { useAppSelector } from "_redux";
-import { dayBackgroundStyleMap } from "config";
-import { isToday } from "date-fns";
 import { formatInTimeZone } from "date-fns-tz";
 import { capitalize } from "lodash";
 import { FC } from "react";
 import { DoneTasksSummaryT } from "types";
-import { isNotWorkingDay } from "utils";
+import { weightedSumGradientColor } from "utils";
 import { ReportOutputWrapper } from "../report_output_wrapper.tsx";
 
 interface IDoneTasksSummaryProps {
@@ -47,6 +45,7 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                     <th>Merged gerrit commits</th>
                     <th>Gerrit comments</th>
                     <th>CVS commits</th>
+                    <th>Weighted sum</th>
                 </tr>
             </thead>
 
@@ -55,19 +54,9 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                     <tr
                         key={day}
                         style={{
-                            ...(!data.has_activity &&
-                                !isToday(new Date(day)) && {
-                                    background: "#EF8354",
-                                }),
-                            ...(isNotWorkingDay(data.day_status) && {
-                                background: "#ffa3a6",
-                            }),
-                            ...(data.day_status === "day_before_employment" && {
-                                background:
-                                    dayBackgroundStyleMap[
-                                        "day_before_employment"
-                                    ],
-                            }),
+                            background: weightedSumGradientColor(
+                                data.item.weighted_sum,
+                            ),
                         }}
                         tabIndex={0}
                     >
@@ -85,6 +74,9 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                         <td>{data.item.gerrit_commits}</td>
                         <td>{data.item.gerrit_comments}</td>
                         <td>{data.item.cvs_commits}</td>
+                        <td>
+                            <strong>{data.item.weighted_sum}</strong>
+                        </td>
                     </tr>
                 ))}
 
@@ -103,6 +95,9 @@ const DoneTasksSummary: FC<IDoneTasksSummaryProps> = ({ data }) => {
                     </td>
                     <td>
                         <strong>{data.total.cvs_commits}</strong>
+                    </td>
+                    <td>
+                        <strong>{data.total.weighted_sum}</strong>
                     </td>
                 </tr>
             </tbody>
