@@ -2,30 +2,8 @@ import { Box, LinearProgress, Tooltip } from "@mui/material";
 import { reportsApi } from "_redux";
 import { nDaysAgo, today } from "config";
 import { FC } from "react";
+import { weightedSumGradientColor } from "utils";
 import { formatDateHumanReadable } from "utils/convert";
-
-const gradientStart = [214, 230, 133];
-const gradientEnd = [30, 104, 35];
-const maxScore = 15;
-
-const gradientColor = (score: number) => {
-    if (score <= 0) {
-        return "#cccccc";
-    }
-    const gradientResult = [];
-    for (let i = 0; i < 3; i++) {
-        if (score > maxScore) {
-            score = maxScore;
-        }
-        gradientResult[i] = Math.round(
-            gradientStart[i] +
-                ((gradientEnd[i] - gradientStart[i]) * score) / maxScore,
-        )
-            .toString(16)
-            .padStart(2, "0");
-    }
-    return `#${gradientResult.join("")}`;
-};
 
 export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
     employeeId,
@@ -69,9 +47,10 @@ export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
                                             style={{
                                                 minWidth: "12px",
                                                 minHeight: "12px",
-                                                background: gradientColor(
-                                                    data.item.weighted_sum,
-                                                ),
+                                                background:
+                                                    weightedSumGradientColor(
+                                                        data.item.weighted_sum,
+                                                    ),
                                             }}
                                         />
                                     </Tooltip>
