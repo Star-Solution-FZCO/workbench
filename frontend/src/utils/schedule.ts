@@ -11,6 +11,10 @@ export const isNotWorkingDay = (dayType: DayT) => {
     ].includes(dayType);
 };
 
+export const isNotEmploymentDay = (dayType: DayT) => {
+    return ["day_before_employment", "day_after_dismissal"].includes(dayType);
+};
+
 export const convertHolidaysToDayStatusMap = (holidays: HolidayT[]) => {
     return holidays.reduce(
         (acc, holiday) => {

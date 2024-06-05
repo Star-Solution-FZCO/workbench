@@ -9,3 +9,4 @@ export * from "./schedule";
 export * from "./translit";
 export * from "./tree";
 export * from "./validators";
+export * from "./weighted_sum";

@@ -1,38 +1,17 @@
 import { Box, LinearProgress, Tooltip } from "@mui/material";
 import { reportsApi } from "_redux";
-import { nDaysAgo, today } from "config";
+import { nDaysAgo } from "config";
+import { capitalize } from "lodash";
 import { FC } from "react";
+import { weightedSumDayColor } from "utils";
 import { formatDateHumanReadable } from "utils/convert";
-
-const gradientStart = [214, 230, 133];
-const gradientEnd = [30, 104, 35];
-const maxScore = 15;
-
-const gradientColor = (score: number) => {
-    if (score <= 0) {
-        return "#cccccc";
-    }
-    const gradientResult = [];
-    for (let i = 0; i < 3; i++) {
-        if (score > maxScore) {
-            score = maxScore;
-        }
-        gradientResult[i] = Math.round(
-            gradientStart[i] +
-                ((gradientEnd[i] - gradientStart[i]) * score) / maxScore,
-        )
-            .toString(16)
-            .padStart(2, "0");
-    }
-    return `#${gradientResult.join("")}`;
-};
 
 export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
     employeeId,
 }) => {
     const { data, isLoading } = reportsApi.useGetDoneTasksSummaryReportQuery({
-        start: nDaysAgo(13).toISOString().substring(0, 10),
-        end: today().toISOString().substring(0, 10),
+        start: nDaysAgo(14).toISOString().substring(0, 10),
+        end: nDaysAgo(1).toISOString().substring(0, 10),
         filter: `id: ${employeeId}`,
     });
 
@@ -63,15 +42,17 @@ export const EmployeeDoneTaskScore: FC<{ employeeId: number }> = ({
                             ([key, data]) => (
                                 <td id={key}>
                                     <Tooltip
-                                        title={`${formatDateHumanReadable(key)}: ${data.item.weighted_sum}`}
+                                        title={`${formatDateHumanReadable(key)}: ${data.item.weighted_sum} (${capitalize(data.day_status.split("_").join(" "))})`}
                                     >
                                         <div
                                             style={{
-                                                minWidth: "12px",
-                                                minHeight: "12px",
-                                                background: gradientColor(
+                                                minWidth: "14px",
+                                                minHeight: "14px",
+                                                background: weightedSumDayColor(
                                                     data.item.weighted_sum,
+                                                    data.day_status,
                                                 ),
+                                                border: "1px solid #ddd",
                                             }}
                                         />
                                     </Tooltip>
