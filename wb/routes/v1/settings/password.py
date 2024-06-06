@@ -10,6 +10,7 @@ from wb.config import CONFIG, AuthModeT
 from wb.db import get_db_session
 from wb.schemas import SuccessOutput
 from wb.utils.current_user import current_employee
+from wb.utils.password import validate_password_strength
 
 __all__ = ('router',)
 
@@ -22,7 +23,7 @@ class PasswordSetPayload(BaseModel):
     otp_code: str = Field(
         ..., min_length=CONFIG.OTP_DIGITS, max_length=CONFIG.OTP_DIGITS
     )
-    password: str = Field(..., min_length=11)
+    password: str
 
 
 @router.post('')
@@ -34,6 +35,8 @@ async def set_password(
         raise HTTPException(
             HTTPStatus.NOT_IMPLEMENTED, detail='password change is not supported'
         )
+    if errors := validate_password_strength(body.password):
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail=errors)
     curr_user = current_employee()
     if not (
         user := await session.scalar(

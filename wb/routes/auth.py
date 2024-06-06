@@ -12,6 +12,7 @@ from wb.config import CONFIG, AuthModeT
 from wb.db import get_db_session
 from wb.schemas import SuccessOutput, SuccessPayloadOutput, UserAuth, UserProfile
 from wb.services.auth import AuthException, get_auth_func, store_user
+from wb.utils.password import validate_password_strength
 from wb.utils.query import make_success_output
 
 __all__ = ('router',)
@@ -26,7 +27,7 @@ class AuthPayload(BaseModel):
 
 class RegisterForm(BaseModel):
     register_token: str
-    password: str = Field(..., min_length=11)
+    password: str
 
 
 @router.post('/login')
@@ -102,6 +103,8 @@ async def register(
         raise HTTPException(
             HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
         )
+    if errors := validate_password_strength(form.password):
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail=errors)
     try:
         data = jwt.decode(form.register_token, CONFIG.JWT_SECRET, algorithms=['HS256'])
     except jwt.PyJWTError as err:

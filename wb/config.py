@@ -196,6 +196,7 @@ CONFIG = Dynaconf(
             default='/data/tm',
             when=Validator('TM_CLIENT_ENABLE', condition=bool),
         ),
+        Validator('PASSWORD_MIN_LENGTH', cast=int, default=11),
     ],
 )
 CONFIG.configure()
