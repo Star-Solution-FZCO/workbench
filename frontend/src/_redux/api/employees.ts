@@ -7,7 +7,6 @@ import {
     CustomBaseQueryFn,
     EmployeeHierarchyT,
     EmployeeHistoryRecordT,
-    EmployeeLinkedAccountT,
     EmployeeSelectOptionT,
     EmployeeT,
     LinkedAccountSourceT,
