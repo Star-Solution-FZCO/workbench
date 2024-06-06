@@ -31,6 +31,7 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                     <th>Sick days</th>
                     <th>Working days</th>
                     <th>Weighted sum</th>
+                    <th>Avg weighted sum</th>
                 </tr>
             </thead>
 
@@ -49,6 +50,16 @@ const DoneTasksSummaryTotal: FC<IDoneTasksSummaryTotalProps> = ({ data }) => (
                         <td>{record.item.working_days}</td>
                         <td>
                             <strong>{record.item.weighted_sum}</strong>
+                        </td>
+                        <td>
+                            <strong>
+                                {record.item.working_days
+                                    ? Math.round(
+                                          (100 * record.item.weighted_sum) /
+                                              record.item.working_days,
+                                      ) / 100
+                                    : "-"}
+                            </strong>
                         </td>
                     </tr>
                 ))}
