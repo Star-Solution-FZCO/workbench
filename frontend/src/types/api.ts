@@ -23,15 +23,53 @@ export type QueryStringErrorT = {
     };
 };
 
+export type QueryStringListErrorT = {
+    status: number;
+    data: {
+        detail: string[];
+        type?: string;
+    };
+};
+
 export const isQueryErrorT = (
-    error: SerializedError | QueryErrorT | QueryStringErrorT,
+    error:
+        | SerializedError
+        | QueryErrorT
+        | QueryStringErrorT
+        | QueryStringListErrorT,
 ): boolean => {
-    return (error as QueryErrorT).data?.detail instanceof Array;
+    if (!((error as QueryErrorT).data?.detail instanceof Array)) {
+        return false;
+    }
+    if ((error as QueryErrorT).data?.detail.length === 0) {
+        return true;
+    }
+    return (error as QueryErrorT).data?.detail[0] instanceof Object;
 };
 
 export const isQueryStringErrorT = (
-    error: SerializedError | QueryErrorT | QueryStringErrorT,
+    error:
+        | SerializedError
+        | QueryErrorT
+        | QueryStringErrorT
+        | QueryStringListErrorT,
 ): boolean => typeof (error as QueryStringErrorT).data?.detail === "string";
+
+export const isQueryStringListErrorT = (
+    error:
+        | SerializedError
+        | QueryErrorT
+        | QueryStringErrorT
+        | QueryStringListErrorT,
+): boolean => {
+    if (!((error as QueryErrorT).data?.detail instanceof Array)) {
+        return false;
+    }
+    if ((error as QueryErrorT).data?.detail.length === 0) {
+        return true;
+    }
+    return typeof (error as QueryErrorT).data?.detail[0] === "string";
+};
 
 export type ListRequestParamsT = {
     filter?: string;
