@@ -2,7 +2,7 @@ from wb.config import CONFIG
 
 __all__ = ('validate_password_strength',)
 
-SPECIFIC_CHARACTERS = frozenset(' !"#$%&\'()*+,-./:;<=>?@[\]^_`{|}~')
+SPECIFIC_CHARACTERS = frozenset(' !"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~')
 KEYBOARD_LINES = (
     '1234567890',
     # English

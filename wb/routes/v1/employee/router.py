@@ -38,7 +38,6 @@ from wb.schemas import (
     SelectOutput,
     SelectParams,
     ShortEmployeeOut,
-    SuccessOutput,
     get_employee_csv_fields,
     get_employee_output_model_class,
 )

@@ -3,7 +3,7 @@ from http import HTTPStatus
 import jwt
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from starsol_fastapi_jwt_auth import AuthJWT
 

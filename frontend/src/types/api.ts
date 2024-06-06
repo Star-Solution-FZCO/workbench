@@ -31,13 +31,13 @@ export type QueryStringListErrorT = {
     };
 };
 
-export const isQueryErrorT = (
-    error:
-        | SerializedError
-        | QueryErrorT
-        | QueryStringErrorT
-        | QueryStringListErrorT,
-): boolean => {
+export type ErrorT =
+    | SerializedError
+    | QueryErrorT
+    | QueryStringErrorT
+    | QueryStringListErrorT;
+
+export const isQueryErrorT = (error: ErrorT): boolean => {
     if (!((error as QueryErrorT).data?.detail instanceof Array)) {
         return false;
     }
@@ -47,21 +47,10 @@ export const isQueryErrorT = (
     return (error as QueryErrorT).data?.detail[0] instanceof Object;
 };
 
-export const isQueryStringErrorT = (
-    error:
-        | SerializedError
-        | QueryErrorT
-        | QueryStringErrorT
-        | QueryStringListErrorT,
-): boolean => typeof (error as QueryStringErrorT).data?.detail === "string";
+export const isQueryStringErrorT = (error: ErrorT): boolean =>
+    typeof (error as QueryStringErrorT).data?.detail === "string";
 
-export const isQueryStringListErrorT = (
-    error:
-        | SerializedError
-        | QueryErrorT
-        | QueryStringErrorT
-        | QueryStringListErrorT,
-): boolean => {
+export const isQueryStringListErrorT = (error: ErrorT): boolean => {
     if (!((error as QueryErrorT).data?.detail instanceof Array)) {
         return false;
     }
