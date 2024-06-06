@@ -790,10 +790,10 @@ async def set_tm_key(
 async def register_user(
     employee_id: EmployeeIDParamT,
     session: AsyncSession = Depends(get_db_session),
-) -> SuccessOutput:
+) -> BaseModelIdOutput:
     if CONFIG.AUTH_MODE != AuthModeT.LOCAL:
         raise HTTPException(
-            HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
+            HTTPStatus.NOT_IMPLEMENTED, detail='Registration is disabled'
         )
     curr_user = current_employee()
     if not curr_user.is_admin or curr_user.id == employee_id:
@@ -824,4 +824,25 @@ async def register_user(
             register_token=register_token,
         ),
     )
-    return SuccessOutput()
+    return make_id_output(emp.id)
+
+
+@router.delete('/{employee_id}/remove-registration')
+async def delete_register_user(
+    employee_id: EmployeeIDParamT,
+    session: AsyncSession = Depends(get_db_session),
+) -> BaseModelIdOutput:
+    if CONFIG.AUTH_MODE != AuthModeT.LOCAL:
+        raise HTTPException(
+            HTTPStatus.NOT_IMPLEMENTED, detail='Registration is disabled'
+        )
+    curr_user = current_employee()
+    if not curr_user.is_admin:
+        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
+    emp = await resolve_employee_id_param(employee_id, session=session)
+    user = await session.scalar(sa.select(m.User).where(m.User.username == emp.account))
+    if not user:
+        raise HTTPException(HTTPStatus.CONFLICT, detail='user not registered')
+    await session.delete(user)
+    await session.commit()
+    return make_id_output(emp.id)
