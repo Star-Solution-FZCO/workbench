@@ -5,22 +5,25 @@ import {
     Box,
     Container,
     CssBaseline,
-    TextField,
+    FormControl,
+    Grid,
     ThemeProvider,
     Typography,
 } from "@mui/material";
-import { Title } from "_components";
+import { FormTextField, Title } from "_components";
 import { authActions } from "_redux";
-import { AUTH_MODE } from "config";
+import { AUTH_MODE, passwordValidationRules } from "config";
 import React, { useState } from "react";
+import { FormProvider, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { theme } from "theme";
+import { genRules, toastError } from "utils";
 
-type LoginPageStateT = {
+type RegisterPageFormT = {
     register_token: string;
     password: string;
-    inProgress: boolean;
+    password2: string;
 };
 
 export const RegisterPage: React.FC = () => {
@@ -29,41 +32,36 @@ export const RegisterPage: React.FC = () => {
     }
 
     const navigate = useNavigate();
-
-    const [state, setState] = useState<LoginPageStateT>({
-        register_token: "",
-        password: "",
-        inProgress: false,
+    const methods = useForm<RegisterPageFormT>({
+        defaultValues: {
+            register_token: "",
+            password: "",
+            password2: "",
+        },
     });
+    const [isLoading, setIsLoading] = useState<boolean>(false);
 
-    const handleSubmit = (e: React.MouseEvent<HTMLButtonElement>) => {
-        if (state.register_token === "" || state.password === "") {
-            toast.error("All fields are required.");
+    const handleSubmit = (formData: RegisterPageFormT) => {
+        setIsLoading(true);
+        if (formData.password !== formData.password2) {
+            toast.error("Passwords do not match.");
+            setIsLoading(false);
             return;
         }
-        e.preventDefault();
-        setState({ ...state, inProgress: true });
 
         const handleSuccessSubmit = () => {
-            setState({ ...state, inProgress: false });
             navigate("/login");
         };
 
         const handleErrorSubmit = (response: any) => {
-            setState({ ...state, inProgress: false });
-            toast.error(response.detail || response.message);
+            setIsLoading(false);
+            toastError({ data: response });
         };
 
         authActions.register(handleSuccessSubmit, handleErrorSubmit)(
-            state.register_token,
-            state.password,
+            formData.register_token,
+            formData.password,
         );
-    };
-
-    const handleChange = ({
-        target: { name, value },
-    }: React.ChangeEvent<HTMLInputElement>) => {
-        setState({ ...state, ...{ [name]: value } });
     };
 
     return (
@@ -88,49 +86,92 @@ export const RegisterPage: React.FC = () => {
                         Registration
                     </Typography>
 
-                    <Box component="form" noValidate sx={{ mt: 1 }}>
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            id="register_token"
-                            label="Registration token"
-                            name="register_token"
-                            autoFocus
-                            variant="standard"
-                            onChange={handleChange}
-                        />
-                        <TextField
-                            margin="normal"
-                            required
-                            fullWidth
-                            name="password"
-                            label="Password"
-                            type="password"
-                            id="password"
-                            autoComplete="current-password"
-                            variant="standard"
-                            onChange={handleChange}
-                            value={state.password}
-                        />
-
-                        <LoadingButton
-                            type="submit"
-                            fullWidth
-                            variant="contained"
-                            sx={{ mt: 3, mb: 2 }}
-                            onClick={handleSubmit}
-                            loading={state.inProgress}
-                            disabled={
-                                state.register_token.length === 0 ||
-                                state.password.length === 0
-                            }
-                        >
-                            Submit
-                        </LoadingButton>
+                    <Box sx={{ mt: 1 }}>
+                        <FormProvider {...methods}>
+                            <form
+                                onSubmit={methods.handleSubmit(
+                                    handleSubmit,
+                                    () => {},
+                                )}
+                            >
+                                <Grid container spacing={1}>
+                                    <Grid item xs={12}>
+                                        <FormControl sx={{ m: 1 }} fullWidth>
+                                            <FormTextField
+                                                name="register_token"
+                                                label="Registration token"
+                                                register={methods.register}
+                                                rules={genRules({
+                                                    required: true,
+                                                })}
+                                                // @ts-ignore
+                                                errors={
+                                                    methods.formState.errors
+                                                }
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl sx={{ m: 1 }} fullWidth>
+                                            <FormTextField
+                                                name="password"
+                                                label="New password"
+                                                register={methods.register}
+                                                type="password"
+                                                rules={genRules({
+                                                    required: true,
+                                                    minLength: 11,
+                                                })}
+                                                // @ts-ignore
+                                                errors={
+                                                    methods.formState.errors
+                                                }
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <FormControl sx={{ m: 1 }} fullWidth>
+                                            <FormTextField
+                                                name="password2"
+                                                label="Repeat password"
+                                                register={methods.register}
+                                                type="password"
+                                                rules={genRules({
+                                                    required: true,
+                                                    minLength: 11,
+                                                })}
+                                                // @ts-ignore
+                                                errors={
+                                                    methods.formState.errors
+                                                }
+                                            />
+                                        </FormControl>
+                                    </Grid>
+                                    <Grid item xs={12}>
+                                        <LoadingButton
+                                            fullWidth
+                                            variant="contained"
+                                            sx={{ mt: 3, mb: 2, m: 1 }}
+                                            loading={isLoading}
+                                            type="submit"
+                                        >
+                                            Submit
+                                        </LoadingButton>
+                                    </Grid>
+                                </Grid>
+                            </form>
+                        </FormProvider>
 
                         <Typography variant="body2">
                             <a href={"/login"}>Login</a>
+                        </Typography>
+                        <Typography variant={"body2"} sx={{ m: 1 }}>
+                            <ul>
+                                Password requirements:
+                                {passwordValidationRules.map((rule) => (
+                                    <li key={rule}>{rule}</li>
+                                ))}
+                            </ul>
                         </Typography>
                     </Box>
                 </Box>
