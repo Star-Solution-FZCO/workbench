@@ -554,7 +554,7 @@ async def restore_add_employee_request(  # pylint: too-many-locals
     if not request:
         raise HTTPException(HTTPStatus.NOT_FOUND, detail='Request not found')
     if request.status != 'CANCELED':
-        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Request cannot be restored')
+        raise HTTPException(HTTPStatus.CONFLICT, detail='Request cannot be restored')
     request.status = 'NEW'
     settings: m.EmployeeRequestSettings | None = await session.scalar(
         sa.select(m.EmployeeRequestSettings)
