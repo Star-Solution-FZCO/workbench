@@ -1,8 +1,9 @@
 import json
 import logging
 import re
+from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Self, Sequence
 from urllib.parse import urljoin
 
 import aiohttp
@@ -19,6 +20,7 @@ __all__ = ('GerritPresenceConnector',)
 GERRIT_MAGIC_JSON_PREFIX = b")]}'\n"
 GERRIT_AUTH_SUFFIX = '/a'
 COMMENTS_PATTERN = re.compile(r'^\((\d+) comments?\)$')
+DONE_TASKS_EXCLUDED_REVISION_KINDS = frozenset({'TRIVIAL_REBASE'})
 
 
 def _fill_change_meta(change: dict) -> dict:
@@ -114,15 +116,24 @@ def time_converter(time_str: str) -> datetime:
     return datetime.utcfromtimestamp(utc_ts)
 
 
-def _parse_revisions(revs: dict[str, dict]) -> dict[int, tuple[datetime, int, bool]]:
-    results = {}
-    for rev in revs.values():
-        results[rev['_number']] = (
-            datetime.fromisoformat(rev['created']),
-            rev['uploader']['_account_id'],
-            'SERVICE_USER' in rev['uploader'].get('tags', []),
-        )
-    return results
+@dataclass
+class Revision:
+    created: datetime
+    uploader: int
+    is_service_user: bool
+    kind: str
+
+    @classmethod
+    def parse_revisions(cls, revs: dict[str, dict]) -> dict[int, Self]:
+        results = {}
+        for rev in revs.values():
+            results[rev['_number']] = cls(
+                created=datetime.fromisoformat(rev['created']),
+                uploader=rev['uploader']['_account_id'],
+                is_service_user='SERVICE_USER' in rev['uploader'].get('tags', []),
+                kind=rev['kind'],
+            )
+        return results
 
 
 class GerritPresenceConnector(Connector):
@@ -324,23 +335,30 @@ class GerritPresenceConnector(Connector):
         results = []
 
         for c in changes:
-            parsed_revisions = _parse_revisions(c.get('revisions', {}))
+            parsed_revisions = Revision.parse_revisions(c.get('revisions', {}))
 
-            last_revision = max(
-                [rev for rev, pr in parsed_revisions.items() if not pr[2]] or [0]
+            last_revision_number = max(
+                [
+                    rev
+                    for rev, pr in parsed_revisions.items()
+                    if not pr.is_service_user
+                    and pr.kind not in DONE_TASKS_EXCLUDED_REVISION_KINDS
+                ]
+                or [0]
             )
+            last_revision = parsed_revisions.get(last_revision_number)
             if (
                 c['status'] == 'MERGED'
                 and last_revision
-                and parsed_revisions[last_revision][0] >= start_dt
-                and parsed_revisions[last_revision][0] < end_dt
-                and (emp_id := aliases.get(str(parsed_revisions[last_revision][1])))
+                and last_revision.created >= start_dt
+                and last_revision.created < end_dt
+                and (emp_id := aliases.get(str(last_revision.uploader)))
             ):
                 results.append(
                     m.DoneTask(
                         employee_id=emp_id,
                         source_id=self.source.id,
-                        time=parsed_revisions[last_revision][0],
+                        time=last_revision.created,
                         task_id=c['id'],
                         task_type='MERGED_COMMIT',
                         task_name=c['subject'],
@@ -357,7 +375,7 @@ class GerritPresenceConnector(Connector):
                         continue
                     if (
                         comment['author']['_account_id']
-                        == parsed_revisions[comment['patch_set']][1]
+                        == parsed_revisions[comment['patch_set']].uploader
                     ):
                         # skip comments from the same author that uploaded the patch set
                         continue
