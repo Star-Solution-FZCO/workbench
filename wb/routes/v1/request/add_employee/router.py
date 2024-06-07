@@ -538,7 +538,7 @@ async def cancel_add_employee_request(
 
 
 @router.put('/{request_id}/restore')
-async def restore_add_employee_request(  # pylint: too-many-locals
+async def restore_add_employee_request(  # pylint: disable=too-many-locals
     request_id: int,
     session: AsyncSession = Depends(get_db_session),
     calendar: CalDAVClient | None = Depends(get_calendar_client),
