@@ -58,6 +58,7 @@ class AddEmployeeRequestOut(BaseOutModel['m.AddEmployeeRequest']):
     can_approve_admin: bool
     can_cancel: bool
     can_update: bool
+    can_restore: bool
 
     @classmethod
     def from_obj(cls, obj: 'm.AddEmployeeRequest') -> t.Self:
@@ -70,6 +71,7 @@ class AddEmployeeRequestOut(BaseOutModel['m.AddEmployeeRequest']):
         )
         can_update = obj.status not in ('CANCELED', 'CLOSED', 'APPROVED') and has_access
         can_approve_hr, can_approve_admin = False, False
+        can_restore = obj.status == 'CANCELED' and 'super_hr' in user_roles
         if user_hr_or_recruiter and obj.approved_by_hr_id is None:
             can_approve_hr = True
         work_started = datetime.strptime(
@@ -101,6 +103,7 @@ class AddEmployeeRequestOut(BaseOutModel['m.AddEmployeeRequest']):
             can_update=can_update,
             can_approve_hr=can_approve_hr,
             can_approve_admin=can_approve_admin,
+            can_restore=can_restore,
         )
 
 

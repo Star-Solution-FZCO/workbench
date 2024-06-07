@@ -517,8 +517,6 @@ async def cancel_add_employee_request(
     if request.status in ('CANCELED', 'CLOSED', 'APPROVED'):
         raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Request cannot be canceled')
     onboarding_data_as_dict = json.loads(request.onboarding_data)
-    onboarding_data_as_dict.pop('contacts', None)
-    request.onboarding_data = json.dumps(onboarding_data_as_dict)
     request.status = 'CANCELED'
     request.updated = datetime.utcnow()
     await session.commit()
@@ -533,5 +531,61 @@ async def cancel_add_employee_request(
     employee_data = request.employee_data
     request_link = f'[{employee_data["english_name"]}]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{request.id})'
     msg = f'Request to add employee {request_link} was cancelled. {request.created_by.link_pararam}'
+    task_send_bbot_message.delay(settings.chat_id, msg, 'chat')
+    return make_id_output(request.id)
+
+
+@router.put('/{request_id}/restore')
+async def restore_add_employee_request(  # pylint: too-many-locals
+    request_id: int,
+    session: AsyncSession = Depends(get_db_session),
+    calendar: CalDAVClient | None = Depends(get_calendar_client),
+) -> BaseModelIdOutput:
+    curr_user = current_employee()
+    user_roles = set(curr_user.roles)
+    has_access = 'super_hr' in user_roles
+    if not has_access:
+        raise HTTPException(HTTPStatus.FORBIDDEN, detail='Forbidden')
+    request: m.AddEmployeeRequest | None = await session.scalar(
+        sa.select(m.AddEmployeeRequest).where(m.AddEmployeeRequest.id == request_id)
+    )
+    if not request:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Request not found')
+    if request.status != 'CANCELED':
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Request cannot be restored')
+    request.status = 'NEW'
+    settings: m.EmployeeRequestSettings | None = await session.scalar(
+        sa.select(m.EmployeeRequestSettings)
+    )
+    if not settings:
+        raise HTTPException(HTTPStatus.NOT_FOUND, detail='Settings not found')
+    employee_data = request.employee_data
+    onboarding_data_as_dict = json.loads(request.onboarding_data)
+    base_summary = f'{onboarding_data_as_dict["organization"]["label"]}: {employee_data["english_name"]}'
+    description = (
+        onboarding_data_as_dict['description'] + ('\n' + (settings.content or ''))
+        if onboarding_data_as_dict['description']
+        else (settings.content or '')
+    )
+    events: list[caldav.Event] = []
+    if calendar:
+        for calendar_id in settings.calendar_ids:
+            event = calendar.create_event(
+                start=datetime.fromisoformat(onboarding_data_as_dict['start']),
+                end=datetime.fromisoformat(onboarding_data_as_dict['end']),
+                calendar_id=calendar_id,
+                summary=base_summary + ' onboarding',
+                description=description,
+            )
+            events.append(event)
+    onboarding_data_as_dict['calendar_events'] = [
+        {'id': event.vobject_instance.vevent.uid.value, 'link': str(event.url)}
+        for event in events
+    ]
+    request.onboarding_data = json.dumps(onboarding_data_as_dict)
+    request.updated = datetime.utcnow()
+    await session.commit()
+    request_link = f'[{employee_data["english_name"]}]({CONFIG.PUBLIC_BASE_URL}/requests/add-employee/{request.id})'
+    msg = f'Request to add employee {request_link} was restored. {request.created_by.link_pararam}'
     task_send_bbot_message.delay(settings.chat_id, msg, 'chat')
     return make_id_output(request.id)

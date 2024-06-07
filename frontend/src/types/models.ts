@@ -336,6 +336,7 @@ export type AddEmployeeRequest = {
     status: RequestStatusT;
     can_cancel: boolean;
     can_update: boolean;
+    can_restore: boolean;
     can_approve_hr: boolean;
     can_approve_admin: boolean;
     approved_by_hr: SelectOptionT | null;

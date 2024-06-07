@@ -189,6 +189,16 @@ export const requestsApi = createApi({
             }),
             invalidatesTags: ["AddEmployeeRequest", "AddEmployeeRequests"],
         }),
+        restoreAddEmployeeRequest: build.mutation<
+            ApiResponse<{ id: number }>,
+            number
+        >({
+            query: (id) => ({
+                url: `${apiVersion}/request/add-employee/${id}/restore`,
+                method: "PUT",
+            }),
+            invalidatesTags: ["AddEmployeeRequest", "AddEmployeeRequests"],
+        }),
         listDismissEmployeeRequest: build.query<
             ApiResponse<ListResponseT<DismissEmployeeRequest>>,
             ListRequestParamsT
