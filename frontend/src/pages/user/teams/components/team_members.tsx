@@ -18,17 +18,25 @@ import {
 } from "@mui/x-data-grid-pro";
 import { DGCellEdit, DataGridContextMenu, Employee } from "_components";
 import { employeesApi } from "_redux";
-import { isEmpty, pickBy } from "lodash";
+import { isEmpty, lowerCase, pickBy, snakeCase } from "lodash";
 import { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { EmployeeLinkedAccountT, TeamMemberItemT, TeamMemberT } from "types";
-import { convertSourceName } from "utils/convert";
 import DismissButton from "./dismiss";
+
+type LinkedAccountSourceT = {
+    id: number;
+    name: string;
+};
+
+const convertSourceName = (sourceName: string): string => {
+    return snakeCase(lowerCase(sourceName));
+};
 
 const getUniqueSources = (
     linkedAccounts: EmployeeLinkedAccountT[],
-): { id: number; name: string }[] => {
+): LinkedAccountSourceT[] => {
     const sources = new Map<number, string>();
 
     linkedAccounts.forEach((account) => {
@@ -38,7 +46,7 @@ const getUniqueSources = (
     return Array.from(sources, ([id, name]) => ({ id, name }));
 };
 
-const createSourceColumns = (uniqueSources: { id: number; name: string }[]) => {
+const createSourceColumns = (uniqueSources: LinkedAccountSourceT[]) => {
     return uniqueSources.map(
         (source): GridColDef<TeamMemberItemT> => ({
             field: convertSourceName(source.name) + "_account_id",

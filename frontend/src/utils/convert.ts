@@ -10,7 +10,6 @@ import {
 import { format as formatWithTZ, toZonedTime } from "date-fns-tz";
 import DOMPurify from "dompurify";
 import parse from "html-react-parser";
-import { lowerCase, snakeCase } from "lodash";
 
 export function dataURItoBlob(dataURI: string) {
     const byteString = window.atob(dataURI.split(",")[1]);
@@ -154,7 +153,3 @@ export function getContrastColorHex(bgHex: string) {
     const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
     return brightness > 125 ? "black" : "white";
 }
-
-export const convertSourceName = (sourceName: string): string => {
-    return snakeCase(lowerCase(sourceName));
-};
