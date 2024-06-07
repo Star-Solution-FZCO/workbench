@@ -21,16 +21,13 @@ from wb.schemas import (
     SelectOutput,
     SelectParams,
 )
+from wb.schemas.employee.fields import LinkedAccountSourceOut
 from wb.utils.current_user import current_employee
 from wb.utils.db import count_select_query_results
 from wb.utils.query import make_id_output, make_list_output, make_select_output
 from wb.utils.search import filter_to_query
 
-from .schemas import (
-    LinkedAccountSourceCreate,
-    LinkedAccountSourceOut,
-    LinkedAccountSourceUpdate,
-)
+from .schemas import LinkedAccountSourceCreate, LinkedAccountSourceUpdate
 
 __all__ = ('router',)
 

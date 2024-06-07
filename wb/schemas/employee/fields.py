@@ -38,7 +38,7 @@ class EmployeeGradeFieldOut(BaseModel):
 
 class LinkedAccountSourceOut(BaseModel):
     id: int
-    type: str
+    type: SelectField
     name: str
     description: str | None
     active: bool
@@ -48,7 +48,7 @@ class LinkedAccountSourceOut(BaseModel):
     def from_obj(cls, obj: 'm.LinkedAccountSource') -> 'LinkedAccountSourceOut':
         return cls(
             id=obj.id,
-            type=obj.type,
+            type=SelectField(label=obj.type, value=obj.type),
             name=obj.name,
             description=obj.description,
             active=obj.active,
