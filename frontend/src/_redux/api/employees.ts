@@ -589,13 +589,5 @@ export const employeesApi = createApi({
             }),
             invalidatesTags: ["LinkedAccountSources"],
         }),
-        listEmployeeLinkedAccount: build.query<
-            ApiResponse<EmployeeLinkedAccountT[]>,
-            number
-        >({
-            query: (id) => ({
-                url: `${apiVersion}/employee/${id}/linked-accounts`,
-            }),
-        }),
     }),
 });

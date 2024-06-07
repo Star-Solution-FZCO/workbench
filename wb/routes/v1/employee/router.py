@@ -74,7 +74,6 @@ from .schemas import (
     EmployeeDaysStatusOut,
     EmployeeDayStatusOut,
     EmployeeHierarchyOut,
-    EmployeeLinkedAccountOut,
     EmployeeTMKeyUpdateOut,
     EmployeeUpdate,
 )
