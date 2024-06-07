@@ -31,6 +31,8 @@ const AddEmployeeRequestView = () => {
         requestsApi.useApproveAddEmployeeRequestMutation();
     const [cancelRequest, { isLoading: cancelLoading }] =
         requestsApi.useCancelAddEmployeeRequestMutation();
+    const [restoreRequest, { isLoading: restoreLoading }] =
+        requestsApi.useRestoreAddEmployeeRequestMutation();
 
     const handleOnSubmit = (
         formData: CreateEmployeeT &
@@ -127,6 +129,22 @@ const AddEmployeeRequestView = () => {
             .then(() => {
                 toast.success("Request successfully cancelled");
                 navigate("/requests?type=add-employee");
+            })
+            .catch((error) => toastError(error));
+    };
+
+    const handleRestore = () => {
+        if (!request) return;
+
+        const confirmed = confirm(
+            "Are you sure you want to restore the request?",
+        );
+        if (!confirmed) return;
+
+        restoreRequest(request.id)
+            .unwrap()
+            .then(() => {
+                toast.success("Request successfully restored");
             })
             .catch((error) => toastError(error));
     };
@@ -243,6 +261,18 @@ const AddEmployeeRequestView = () => {
                         loading={cancelLoading}
                     >
                         Cancel
+                    </LoadingButton>
+                )}
+
+                {request.can_restore && (
+                    <LoadingButton
+                        onClick={handleRestore}
+                        variant="outlined"
+                        size="small"
+                        color="success"
+                        loading={restoreLoading}
+                    >
+                        Restore
                     </LoadingButton>
                 )}
             </Box>
