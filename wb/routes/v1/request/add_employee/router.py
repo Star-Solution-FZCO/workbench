@@ -517,6 +517,8 @@ async def cancel_add_employee_request(
     if request.status in ('CANCELED', 'CLOSED', 'APPROVED'):
         raise HTTPException(HTTPStatus.BAD_REQUEST, detail='Request cannot be canceled')
     onboarding_data_as_dict = json.loads(request.onboarding_data)
+    onboarding_data_as_dict.pop('contacts', None)
+    request.onboarding_data = json.dumps(onboarding_data_as_dict)
     request.status = 'CANCELED'
     request.updated = datetime.utcnow()
     await session.commit()
