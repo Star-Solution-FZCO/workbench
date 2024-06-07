@@ -162,9 +162,16 @@ export const RegisterPage: React.FC = () => {
                             </form>
                         </FormProvider>
 
-                        <Typography variant="body2">
-                            <a href={"/login"}>Login</a>
-                        </Typography>
+                        <Box display={"flex"} justifyContent={"space-between"}>
+                            <Typography variant="body2">
+                                <a href={"/login"}>Login</a>
+                            </Typography>
+                            <Typography variant="body2">
+                                <a href={"/password-generator"}>
+                                    Password generator
+                                </a>
+                            </Typography>
+                        </Box>
                         <Typography variant={"body2"} sx={{ m: 1 }}>
                             <ul>
                                 Password requirements:

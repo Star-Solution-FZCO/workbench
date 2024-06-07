@@ -114,9 +114,9 @@ export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
                         </Grid>
                         <Grid item xs={12}>
                             <LoadingButton
-                                disabled={false}
                                 loading={isLoading}
                                 type="submit"
+                                variant="outlined"
                             >
                                 Submit
                             </LoadingButton>
@@ -124,6 +124,9 @@ export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
                     </Grid>
                 </form>
             </FormProvider>
+            <Typography sx={{ mt: 2 }} variant="body2">
+                <a href={"/password-generator"}>Password generator</a>
+            </Typography>
         </Modal>
     );
 };
