@@ -3,7 +3,7 @@ from http import HTTPStatus
 import jwt
 import sqlalchemy as sa
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from starsol_fastapi_jwt_auth import AuthJWT
 
@@ -12,6 +12,7 @@ from wb.config import CONFIG, AuthModeT
 from wb.db import get_db_session
 from wb.schemas import SuccessOutput, SuccessPayloadOutput, UserAuth, UserProfile
 from wb.services.auth import AuthException, get_auth_func, store_user
+from wb.utils.password import validate_password_strength
 from wb.utils.query import make_success_output
 
 __all__ = ('router',)
@@ -26,7 +27,7 @@ class AuthPayload(BaseModel):
 
 class RegisterForm(BaseModel):
     register_token: str
-    password: str = Field(..., min_length=11)
+    password: str
 
 
 @router.post('/login')
@@ -102,6 +103,8 @@ async def register(
         raise HTTPException(
             HTTPStatus.NOT_IMPLEMENTED, detail='Registration is not allowed'
         )
+    if errors := validate_password_strength(form.password):
+        raise HTTPException(HTTPStatus.BAD_REQUEST, detail=errors)
     try:
         data = jwt.decode(form.register_token, CONFIG.JWT_SECRET, algorithms=['HS256'])
     except jwt.PyJWTError as err:

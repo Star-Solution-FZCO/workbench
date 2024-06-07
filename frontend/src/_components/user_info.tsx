@@ -1,11 +1,19 @@
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
 import EditIcon from "@mui/icons-material/Edit";
-import KeyIcon from "@mui/icons-material/Key";
+import SettingsIcon from "@mui/icons-material/Settings";
 import SourceIcon from "@mui/icons-material/Source";
 import SummarizeIcon from "@mui/icons-material/Summarize";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import { Badge, Box, IconButton, Tooltip, Typography } from "@mui/material";
+import {
+    Badge,
+    Box,
+    IconButton,
+    Menu,
+    MenuItem,
+    Tooltip,
+    Typography,
+} from "@mui/material";
 import { AvatarField, Modal } from "_components";
 import ActivitySourceAliasesList from "_components/activity_source_aliases_list";
 import { DismissSubmitDialog } from "_components/dismiss";
@@ -13,7 +21,7 @@ import WatchModal from "_components/watch_modal";
 import { employeesApi, useAppSelector } from "_redux";
 import { AUTH_MODE, today, weekAgo } from "config";
 import { endOfWeek, format, startOfWeek } from "date-fns";
-import { FC, useState } from "react";
+import React, { FC, useState } from "react";
 import { createSearchParams, useMatch, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { ApiResponse, EmployeeT } from "types";
@@ -56,7 +64,11 @@ const UserInfo: FC<{
         useState(false);
     const [openOrgStructure, setOpenOrgStructure] = useState(false);
 
+    const [userSettingsMenuAnchorEl, setUserSettingsMenuAnchorEl] =
+        useState<HTMLElement | null>(null);
     const [registerUser] = employeesApi.useRegisterEmployeeMutation();
+    const [deleteUserRegistration] =
+        employeesApi.useDeleteEmployeeRegistrationMutation();
 
     const profile = useAppSelector(({ profile }) => profile.payload);
 
@@ -81,11 +93,32 @@ const UserInfo: FC<{
         });
     };
 
+    const handleUserSettingsMenuOpen = (
+        event: React.MouseEvent<HTMLButtonElement>,
+    ) => {
+        setUserSettingsMenuAnchorEl(event.currentTarget);
+    };
+
+    const handleUserSettingsMenuClose = () => {
+        setUserSettingsMenuAnchorEl(null);
+    };
+
     const handleRegister = () => {
         registerUser(data.id)
             .unwrap()
             .then(() => {
                 toast.success("Registration token has been sent to the user");
+            })
+            .catch((error) => {
+                toastError(error);
+            });
+    };
+
+    const handleDeleteUserRegistration = () => {
+        deleteUserRegistration(data.id)
+            .unwrap()
+            .then(() => {
+                toast.success("User registration has been deleted");
             })
             .catch((error) => {
                 toastError(error);
@@ -263,21 +296,37 @@ const UserInfo: FC<{
                         </Tooltip>
 
                         {profile.admin && isLocalAuth && (
-                            <Tooltip title="Register user">
-                                <IconButton
-                                    sx={{
-                                        p: 0,
-                                        "&:hover": {
-                                            color: "secondary.main",
-                                        },
-                                    }}
-                                    onClick={handleRegister}
-                                    size="small"
-                                    disableRipple
+                            <>
+                                <Tooltip title="Register user">
+                                    <IconButton
+                                        sx={{
+                                            p: 0,
+                                            "&:hover": {
+                                                color: "secondary.main",
+                                            },
+                                        }}
+                                        onClick={handleUserSettingsMenuOpen}
+                                        size="small"
+                                        disableRipple
+                                    >
+                                        <SettingsIcon />
+                                    </IconButton>
+                                </Tooltip>
+                                <Menu
+                                    open={Boolean(userSettingsMenuAnchorEl)}
+                                    onClose={handleUserSettingsMenuClose}
+                                    anchorEl={userSettingsMenuAnchorEl}
                                 >
-                                    <KeyIcon />
-                                </IconButton>
-                            </Tooltip>
+                                    <MenuItem onClick={handleRegister}>
+                                        Register user
+                                    </MenuItem>
+                                    <MenuItem
+                                        onClick={handleDeleteUserRegistration}
+                                    >
+                                        Delete user registration
+                                    </MenuItem>
+                                </Menu>
+                            </>
                         )}
                     </Box>
                 )}

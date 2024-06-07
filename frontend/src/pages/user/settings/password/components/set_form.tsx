@@ -14,15 +14,18 @@ interface IPasswordSetDialogProps {
     onSuccess: () => void;
 }
 
+type PasswordSetFormT = PasswordSetT & { password2: string };
+
 export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
     open,
     onClose,
     onSuccess,
 }) => {
-    const methods = useForm<PasswordSetT>({
+    const methods = useForm<PasswordSetFormT>({
         defaultValues: {
             otp_code: "",
             password: "",
+            password2: "",
         },
     });
     const [setPassword, { isLoading }] = sharedApi.useSetPasswordMutation();
@@ -32,8 +35,15 @@ export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
         onClose();
     };
 
-    const handleOnSubmit = (formData: PasswordSetT) => {
-        setPassword(formData)
+    const handleOnSubmit = (formData: PasswordSetFormT) => {
+        if (formData.password !== formData.password2) {
+            toast.error("Passwords do not match.");
+            return;
+        }
+        setPassword({
+            otp_code: formData.otp_code,
+            password: formData.password,
+        })
             .unwrap()
             .then(() => {
                 toast.success("Password has been changed.");
@@ -87,10 +97,26 @@ export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
                             </FormControl>
                         </Grid>
                         <Grid item xs={12}>
+                            <FormControl sx={{ m: 1, width: "16rem" }}>
+                                <FormTextField
+                                    name="password2"
+                                    label="Repeat password"
+                                    register={methods.register}
+                                    type="password"
+                                    rules={genRules({
+                                        required: true,
+                                        minLength: 11,
+                                    })}
+                                    // @ts-ignore
+                                    errors={methods.formState.errors}
+                                />
+                            </FormControl>
+                        </Grid>
+                        <Grid item xs={12}>
                             <LoadingButton
-                                disabled={false}
                                 loading={isLoading}
                                 type="submit"
+                                variant="outlined"
                             >
                                 Submit
                             </LoadingButton>
@@ -98,6 +124,9 @@ export const PasswordSetDialog: FC<IPasswordSetDialogProps> = ({
                     </Grid>
                 </form>
             </FormProvider>
+            <Typography sx={{ mt: 2 }} variant="body2">
+                <a href={"/password-generator"}>Password generator</a>
+            </Typography>
         </Modal>
     );
 };

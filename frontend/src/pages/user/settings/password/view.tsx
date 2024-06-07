@@ -1,6 +1,6 @@
 import { Box, Button, Typography } from "@mui/material";
 import { authActions } from "_redux";
-import { AUTH_MODE, loginPageUrl } from "config";
+import { AUTH_MODE, loginPageUrl, passwordValidationRules } from "config";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { PasswordSetDialog } from "./components/set_form.tsx";
@@ -37,6 +37,14 @@ const PasswordView = () => {
                     Set new password
                 </Button>
             </Box>
+            <Typography variant={"body2"} sx={{ m: 1 }}>
+                <ul>
+                    Password requirements:
+                    {passwordValidationRules.map((rule) => (
+                        <li key={rule}>{rule}</li>
+                    ))}
+                </ul>
+            </Typography>
         </Box>
     );
 };

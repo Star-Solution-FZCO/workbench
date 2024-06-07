@@ -184,4 +184,15 @@ export const contactTypes = [
     "other",
 ] as const;
 
+export const passwordValidationRules = [
+    "Contain at least 11 characters long",
+    "Contain at least one digit",
+    "Contain at least one uppercase letter",
+    "Contain at least one lowercase letter",
+    "Contain at least one special character",
+    "Not contain 4 consecutive characters from the same keyboard line",
+    "Not contain 4 consecutive identical characters",
+    "Not contain 4 consecutive characters which are consecutive in the UTF-8 encoding",
+];
+
 export default appConstants;
