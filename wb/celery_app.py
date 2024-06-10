@@ -68,6 +68,10 @@ celery_app.conf.beat_schedule = {
         'task': 'monthly_counteragents_check',
         'schedule': crontab(hour='6', minute='0', day_of_month='1'),
     },
+    'task-update-linked-accounts': {
+        'task': 'update_linked_accounts',
+        'schedule': crontab(hour='3', minute='27'),
+    },
 }
 
 if CONFIG.YOUTRACK_URL:

@@ -7,7 +7,7 @@ import {
     CounteragentT,
     EmployeeT,
     ListResponseT,
-    TeamMemberT,
+    TeamMemberItemT,
     TeamT,
 } from "types";
 import TeamMembers from "./team_members";
@@ -15,8 +15,8 @@ import TeamMembers from "./team_members";
 const combineTeamData = (
     membersData: ApiResponse<ListResponseT<EmployeeT>> | undefined,
     counteragentsData: ApiResponse<ListResponseT<CounteragentT>> | undefined,
-): TeamMemberT[] => {
-    const results: TeamMemberT[] = [];
+): TeamMemberItemT[] => {
+    const results: TeamMemberItemT[] = [];
 
     const members = membersData?.payload?.items || [];
     const counteragents = counteragentsData?.payload?.items || [];
@@ -30,6 +30,7 @@ const combineTeamData = (
             team_position: member.team_position || "",
             grade: member.grade?.grade || "",
             counteragent: false,
+            linked_accounts: member.linked_accounts,
         });
     });
 
@@ -42,6 +43,7 @@ const combineTeamData = (
             team_position: "",
             grade: "",
             counteragent: true,
+            linked_accounts: [],
         });
     });
 

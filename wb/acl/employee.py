@@ -224,6 +224,10 @@ EMPLOYEE_FIELD_ACL: dict[str, FieldACL[m.Employee]] = {
         edit=frozenset(),
         view=frozenset({'super_admin', 'super_hr', 'hr'}),
     ),
+    'linked_accounts': FieldACL(
+        edit=frozenset(),
+        view=frozenset({'all'}),
+    ),
 }
 
 

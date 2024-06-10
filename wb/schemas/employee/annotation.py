@@ -10,9 +10,11 @@ from .base_schemas import SelectEmployeeField
 from .fields import (
     EmployeeAvailabilityTimeField,
     EmployeeGradeFieldOut,
+    EmployeeLinkedAccountOut,
     catalog_attr_getter,
     get_availability_time,
     get_grade,
+    get_linked_accounts,
     get_managers,
     get_mentors,
     get_timezone,
@@ -259,6 +261,12 @@ EMPLOYEE_FIELD_ANNOTATIONS: dict[str, ModelFieldAnnotation[m.Employee]] = {
         _getter=catalog_attr_getter('pool'),
         csv_include=True,
         _csv_getter=lambda obj: obj.pool.name if obj.pool else '',
+    ),
+    'linked_accounts': ModelFieldAnnotation(
+        name='linked_accounts',
+        type=list[EmployeeLinkedAccountOut],
+        _getter=get_linked_accounts,
+        csv_include=False,
     ),
 }
 

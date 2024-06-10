@@ -9,6 +9,7 @@ import DatePickerField from "./datepicker_field";
 import EmployeeListField from "./employee_list";
 import FieldWrapper from "./field_wrapper";
 import GradeField from "./grade_field";
+import { EmployeeLinkedAccounts } from "./linked_accounts";
 import MultilineTextfield from "./multiline_textfield";
 import ProbationPeriodField from "./probation_period_field";
 import SelectField from "./select_field";
@@ -16,9 +17,9 @@ import SelectListField from "./select_list_field";
 import TimeRangeField from "./time_range_field";
 import WorkChatListField from "./work_chat_list_field";
 
-const EmployeeForm: FC<{ data: ApiResponse<EmployeeT> }> = ({
-    data: responseData,
-}) => {
+const EmployeeForm: FC<{
+    data: ApiResponse<EmployeeT>;
+}> = ({ data: responseData }) => {
     const { metadata, payload: data } = responseData;
 
     const [editMode, setEditMode] = useState({
@@ -62,7 +63,7 @@ const EmployeeForm: FC<{ data: ApiResponse<EmployeeT> }> = ({
                 <Box
                     display="flex"
                     flexDirection="column"
-                    gap="4px"
+                    gap={0.5}
                     width="650px"
                 >
                     <MultilineTextfield
@@ -339,6 +340,16 @@ const EmployeeForm: FC<{ data: ApiResponse<EmployeeT> }> = ({
                             editMode={editMode["pool"]}
                             onChangeEditMode={() => changeEditMode("pool")}
                         />
+                    )}
+
+                    {data.linked_accounts.length > 0 && (
+                        <>
+                            <Divider sx={{ mb: 0.5 }} flexItem />
+
+                            <EmployeeLinkedAccounts
+                                accounts={data.linked_accounts}
+                            />
+                        </>
                     )}
                 </Box>
             </form>

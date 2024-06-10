@@ -19,6 +19,7 @@ from .schedule.schedule import EmployeeSchedule
 
 if TYPE_CHECKING:
     from .employee_pool import EmployeePool
+    from .linked_accounts.accounts import LinkedAccount
     from .tm import EmployeeTM
 
 
@@ -333,6 +334,10 @@ class Employee(BaseDBModel):
     tm: Mapped['EmployeeTM | None'] = relationship(
         back_populates='employee',
         lazy='selectin',
+    )
+
+    linked_accounts: Mapped[list['LinkedAccount']] = relationship(
+        back_populates='employee', lazy='selectin'
     )
 
     def __repr__(self) -> str:

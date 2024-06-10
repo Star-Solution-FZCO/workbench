@@ -18,16 +18,54 @@ import {
 } from "@mui/x-data-grid-pro";
 import { DGCellEdit, DataGridContextMenu, Employee } from "_components";
 import { employeesApi } from "_redux";
-import { isEmpty, pickBy } from "lodash";
+import { isEmpty, lowerCase, pickBy, snakeCase } from "lodash";
 import { FC, useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import { TeamMemberT } from "types";
+import { EmployeeLinkedAccountT, TeamMemberItemT, TeamMemberT } from "types";
 import DismissButton from "./dismiss";
+
+type LinkedAccountSourceT = {
+    id: number;
+    name: string;
+};
+
+const convertSourceName = (sourceName: string): string => {
+    return snakeCase(lowerCase(sourceName));
+};
+
+const getUniqueSources = (
+    linkedAccounts: EmployeeLinkedAccountT[],
+): LinkedAccountSourceT[] => {
+    const sources = new Map<number, string>();
+
+    linkedAccounts.forEach((account) => {
+        sources.set(account.source.id, account.source.name);
+    });
+
+    return Array.from(sources, ([id, name]) => ({ id, name }));
+};
+
+const createSourceColumns = (uniqueSources: LinkedAccountSourceT[]) => {
+    return uniqueSources.map(
+        (source): GridColDef<TeamMemberItemT> => ({
+            field: convertSourceName(source.name) + "_account_id",
+            headerName: source.name + " Account ID",
+            flex: 1,
+            sortable: false,
+            valueGetter: (_, row) => {
+                const account = row.linked_accounts.find(
+                    (account) => account.source.id === source.id,
+                );
+                return account ? account.account_id : "";
+            },
+        }),
+    );
+};
 
 const TeamMembers: FC<{
     team_id: number;
-    data: TeamMemberT[];
+    data: TeamMemberItemT[];
     can_dismiss: boolean;
     can_edit?: boolean;
 }> = ({ team_id, data: members, can_dismiss, can_edit }) => {
@@ -61,8 +99,13 @@ const TeamMembers: FC<{
         setContextMenuEventCurrentTarget(null);
     };
 
-    const columns = useMemo<GridColDef<TeamMemberT>[]>(
-        () => [
+    const columns = useMemo<GridColDef<TeamMemberItemT>[]>(() => {
+        const uniqueSources = getUniqueSources(
+            members.map((m) => m.linked_accounts).flat(),
+        );
+        const sourceColumns = createSourceColumns(uniqueSources);
+
+        return [
             {
                 field: "id",
                 headerName: "Actions",
@@ -123,13 +166,13 @@ const TeamMembers: FC<{
                 headerName: "Grade",
                 flex: 1,
             },
-        ],
-        [can_dismiss, can_edit, handleClickEdit],
-    );
+            ...sourceColumns,
+        ];
+    }, [can_dismiss, can_edit, handleClickEdit]);
 
     const handleProcessRowUpdate = async (
-        newRow: TeamMemberT,
-        oldRow: TeamMemberT,
+        newRow: TeamMemberItemT,
+        oldRow: TeamMemberItemT,
     ) => {
         try {
             const updatedValues = pickBy(

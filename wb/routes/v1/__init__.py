@@ -6,6 +6,7 @@ from .counteragent import __routers__ as __counteragent__routers__
 from .employee import __routers__ as __employee__routers__
 from .group import __routers__ as __group__routers__
 from .help_center import __routers__ as __help_center__routers__
+from .linked_account import __routers__ as __linked_account__routers__
 from .notification import __routers__ as __notification__routers__
 from .policy import __routers__ as __policy__routers__
 from .profile import router as profile_router
@@ -33,6 +34,7 @@ __routers__ = [
     *__employee__routers__,
     *__group__routers__,
     *__help_center__routers__,
+    *__linked_account__routers__,
     *__notification__routers__,
     *__policy__routers__,
     *__quiz__routers__,

@@ -13,12 +13,14 @@ __all__ = (
     'EmployeeGradeFieldOut',
     'EmployeeGradeFieldUpdate',
     'EmployeeAvailabilityTimeField',
+    'EmployeeLinkedAccountOut',
     'get_grade',
     'get_timezone',
     'get_managers',
     'get_mentors',
     'get_watchers',
     'get_availability_time',
+    'get_linked_accounts',
     'is_current_user_team_lead',
     'catalog_attr_getter',
     'list_attr_getter',
@@ -32,6 +34,32 @@ class EmployeeGradeFieldOut(BaseModel):
     grade: str
     updated: datetime
     reason: Optional[str]
+
+
+class LinkedAccountSourceOut(BaseModel):
+    id: int
+    type: SelectField
+    name: str
+    description: str | None
+    active: bool
+    public: bool
+
+    @classmethod
+    def from_obj(cls, obj: 'm.LinkedAccountSource') -> 'LinkedAccountSourceOut':
+        return cls(
+            id=obj.id,
+            type=SelectField(label=obj.type, value=obj.type),
+            name=obj.name,
+            description=obj.description,
+            active=obj.active,
+            public=obj.public,
+        )
+
+
+class EmployeeLinkedAccountOut(BaseModel):
+    source: LinkedAccountSourceOut
+    account_id: str
+    active: bool | None
 
 
 class EmployeeGradeFieldUpdate(BaseModel):
@@ -52,6 +80,19 @@ def get_grade(obj: 'm.Employee') -> EmployeeGradeFieldOut | None:
         updated=obj.grade_updated,
         reason=obj.grade_reason,
     )
+
+
+def get_linked_accounts(obj: 'm.Employee') -> List[EmployeeLinkedAccountOut]:
+    curr_user = current_user()
+    return [
+        EmployeeLinkedAccountOut(
+            source=LinkedAccountSourceOut.from_obj(acc.source),
+            account_id=acc.account_id,
+            active=acc.active,
+        )
+        for acc in obj.linked_accounts
+        if acc.source.public or curr_user.id == obj.id
+    ]
 
 
 def get_availability_time(obj: 'm.Employee') -> Optional[EmployeeAvailabilityTimeField]:

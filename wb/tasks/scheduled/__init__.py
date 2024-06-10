@@ -9,4 +9,5 @@ from .grade_check import *
 from .null_team_check import *
 from .team_changes_report import *
 from .tm_auto_leave import *
+from .update_linked_accounts import *
 from .youtrack_projects import *
