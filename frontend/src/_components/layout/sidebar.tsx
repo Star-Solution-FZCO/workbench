@@ -1,5 +1,6 @@
 import {
     Box,
+    CircularProgress,
     Divider,
     Drawer,
     List,
@@ -7,11 +8,11 @@ import {
     Typography,
     useMediaQuery,
 } from "@mui/material";
-import { APP_VERSION } from "config";
+import { sharedApi } from "_redux";
+import appConstants, { APP_VERSION } from "config";
 import { map } from "lodash";
 import React, { useMemo } from "react";
 import { useMatch } from "react-router-dom";
-import appConstants from "../../config";
 import { FordableNavItem, NavItem, NavItemT } from "./navitem";
 
 type SidebarPropsT = {
@@ -22,6 +23,9 @@ type SidebarPropsT = {
 
 export const Sidebar: React.FC<SidebarPropsT> = ({ open, items, onClose }) => {
     const isAdminArea = useMatch("/admin/*");
+
+    const { data: versionData, isLoading: versionIsLoading } =
+        sharedApi.useGetVersionQuery();
 
     const lgUp = useMediaQuery((theme: Theme) => theme.breakpoints.up("lg"), {
         defaultMatches: true,
@@ -97,11 +101,20 @@ export const Sidebar: React.FC<SidebarPropsT> = ({ open, items, onClose }) => {
                         marginBottom: 1,
                     }}
                 >
-                    <Typography>Version: {APP_VERSION}</Typography>
+                    <Typography>Version</Typography>
+                    <Typography>Frontend: {APP_VERSION}</Typography>
+                    <Typography>
+                        Backend:{" "}
+                        {versionIsLoading ? (
+                            <CircularProgress size={12} />
+                        ) : (
+                            versionData?.payload?.version || "unknown"
+                        )}
+                    </Typography>
                 </Box>
             </Box>
         ),
-        [isAdminArea, navItems],
+        [isAdminArea, navItems, versionIsLoading],
     );
 
     if (lgUp) {
