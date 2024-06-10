@@ -15,7 +15,7 @@ class VersionOut(BaseModel):
     version: str
 
 
-@router.get('/')
+@router.get('')
 async def get_version() -> SuccessPayloadOutput[VersionOut]:
     version = os.environ.get('APP_VERSION', '__DEV__')
     return make_success_output(payload=VersionOut(version=version))

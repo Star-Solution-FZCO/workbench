@@ -26,6 +26,7 @@ const tagTypes = [
     "Changelog",
     "Changelogs",
     "OTP",
+    "Version",
 ];
 
 export const sharedApi = createApi({
@@ -233,6 +234,13 @@ export const sharedApi = createApi({
                 method: "POST",
                 body,
             }),
+        }),
+        getVersion: build.query<ApiResponse<{ version: number }>, void>({
+            query: () => ({
+                url: `${apiVersion}/version`,
+                method: "GET",
+            }),
+            providesTags: ["Version"],
         }),
     }),
 });
