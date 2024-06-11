@@ -8,6 +8,7 @@ __all__ = ('GoogleDriveConnector',)
 class GoogleDriveConnector(GoogleReportConnector):
     _event_parameters = ('doc_type', 'doc_id')
     _ignored_action = (
+        'access_url',
         'view',
         'download',
         'storage_usage_update',
