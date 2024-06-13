@@ -15,7 +15,7 @@ from wb.schemas import (
     SelectOutput,
     SelectParams,
 )
-from wb.utils.current_user import current_employee
+from wb.utils.current_user import current_employee, current_user
 from wb.utils.db import count_select_query_results, resolve_db_ids
 from wb.utils.query import (
     get_select_value,
@@ -39,10 +39,11 @@ async def list_groups(
     query: ListFilterParams = Depends(ListFilterParams),
     session: AsyncSession = Depends(get_db_session),
 ) -> BaseListOutput[GroupListItemOut]:
-    curr_user = current_employee()
-    q = sa.select(m.Group).where(
-        sa.or_(m.Group.owner_id == curr_user.id, m.Group.owner_id.is_(None))
-    )
+    curr_user = current_user()
+    owner_filters = [m.Group.owner_id.is_(None)]
+    if isinstance(curr_user, m.Employee):
+        owner_filters.append(m.Group.owner_id == curr_user.id)
+    q = sa.select(m.Group).where(sa.or_(*owner_filters))
     if query.filter:
         q = q.filter(filter_to_query(query.filter, m.Group, available_fields=['name']))  # type: ignore
     count = await count_select_query_results(q, session=session)
