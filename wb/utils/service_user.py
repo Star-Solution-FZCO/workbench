@@ -40,10 +40,8 @@ def verify_service_user_jwt(token: str, request: Request) -> str:
         raise HTTPException(HTTPStatus.UNAUTHORIZED, 'kid header is required')
     if not (key := API_KEYS.get(kid)):
         raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Invalid token')
-    if request.url.path not in key.paths:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Invalid path')
-    if request.method not in key.paths[request.url.path]:
-        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Invalid method')
+    if not key.check_path(request.url.path, request.method):
+        raise HTTPException(HTTPStatus.UNAUTHORIZED, 'Invalid path or method')
     try:
         data = jwt.decode(token, key.secret, algorithms=['HS256'])
     except jwt.exceptions.ExpiredSignatureError as err:

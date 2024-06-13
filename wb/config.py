@@ -1,6 +1,7 @@
 import datetime
 import os
-from dataclasses import dataclass
+import re
+from dataclasses import dataclass, field
 from enum import StrEnum
 from os.path import join as opj
 from typing import Any
@@ -21,6 +22,18 @@ class APIKeyT:
     secret: str
     paths: dict[str, list[str]]
     roles: set[str]
+    __paths_patterns__: list[tuple[re.Pattern, list[str]]] = field(init=False)
+
+    def __post_init__(self) -> None:
+        self.__paths_patterns__ = [
+            (re.compile(f'^{p}$'), methods) for p, methods in self.paths.items()
+        ]
+
+    def check_path(self, path: str, method: str) -> bool:
+        return any(
+            pattern.fullmatch(path) and method in methods
+            for pattern, methods in self.__paths_patterns__
+        )
 
 
 def parse_api_keys(keys: dict[str, Any]) -> dict[str, APIKeyT]:
