@@ -21,6 +21,22 @@ __all__ = (
 class ServiceUser:
     roles: set[str]
 
+    @property
+    def is_admin(self) -> bool:
+        return 'admin' in self.roles or 'super_admin' in self.roles
+
+    @property
+    def is_super_admin(self) -> bool:
+        return 'super_admin' in self.roles
+
+    @property
+    def is_hr(self) -> bool:
+        return 'hr' in self.roles or 'super_hr' in self.roles
+
+    @property
+    def is_super_hr(self) -> bool:
+        return 'super_hr' in self.roles
+
 
 def is_service_user_jwt(s: str) -> bool:
     try:
