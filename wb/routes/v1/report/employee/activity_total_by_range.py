@@ -78,10 +78,9 @@ async def generate_activity_total_by_range_report(
         activities[res.employee_id].append(res)
     results: list[SimpleReportItem] = []
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 item=_report_item_from_obj(
                     calc_activity_summary(activities[emp.id]),
                     vacations=len(

@@ -36,10 +36,9 @@ async def generate_free_days_report(
     results: list[SimpleReportItem] = []
     for emp in employees:
         res = await calc_employee_vacation_days(emp, session=session)
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 item=ReportItem(
                     total_vacation_days_year_end=res.total_vacation_year_end,
                     total_vacation_days_current=res.total_vacation_days_current,

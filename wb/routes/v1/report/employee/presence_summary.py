@@ -58,10 +58,9 @@ async def generate_presence_summary_report(
     )
     results: list[SimpleReportItem[ReportItem]] = []
     for emp, user_presence in zip(employees, presence):
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 item=ReportItem(
                     total=format_timedelta(
                         sum_timedelta([data.total for data in user_presence.values()])

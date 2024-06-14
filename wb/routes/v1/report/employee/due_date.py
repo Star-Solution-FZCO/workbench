@@ -86,10 +86,9 @@ async def generate_due_date_report(
     }
     results: list[ReportItem] = []
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             ListDetailsReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 items=[
                     ReportItem.from_obj(issue, emp) for issue in employee_issues[emp.id]
                 ],

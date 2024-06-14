@@ -40,10 +40,9 @@ async def generate_done_tasks_summary_total_report(
         session=session,
     )
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 item=ReportItem(
                     issues=stats[emp.id].youtrack_issues,
                     gerrit_commits=stats[emp.id].gerrit_commits,

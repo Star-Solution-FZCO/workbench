@@ -75,10 +75,9 @@ async def generate_activity_details_report(
         employees, start, end, session=session
     )
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysListReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysListReportDayItem(
                         day_status=days_status[emp.id][day],

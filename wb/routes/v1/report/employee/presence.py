@@ -84,10 +84,9 @@ async def generate_presence_report(
     )
     results: list[DaysSimpleReportItem[ReportItem]] = []
     for emp, user_presence in zip(employees, presence):
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysSimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem.from_presence_item(

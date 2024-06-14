@@ -69,10 +69,9 @@ async def generate_activity_summary_report(
                 day: calc_activity_summary(acts)
                 for day, acts in activities[emp.id].items()
             }
-            emp_out_cls = get_employee_output_model_class(fields=FULL_EMPLOYEE_FIELDS)
             results.append(
                 DaysSimpleReportItem(
-                    employee=emp_out_cls.from_obj(emp),
+                    employee=emp,
                     days={
                         day: DaysSimpleReportDayItem(
                             item=_report_item_from_obj(summaries[day]),

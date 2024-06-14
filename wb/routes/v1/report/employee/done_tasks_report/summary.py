@@ -51,10 +51,9 @@ async def generate_done_tasks_summary_report(
         session=session,
     )
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysSimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem(
