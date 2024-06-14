@@ -647,7 +647,11 @@ export type PresenceSummaryT = {
 };
 
 export type DayOffDetailsReportItemT = {
-    employee: UserInfoT;
+    employee: UserInfoT & {
+        email: string;
+        cooperation_type?: SelectOptionT | null;
+        organization?: SelectOptionT | null;
+    };
     items: Array<{
         start: string;
         end: string;
