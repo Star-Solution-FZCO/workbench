@@ -4,18 +4,12 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import get_employees_days_activity_status
 from wb.services.done_tasks import get_done_task_summary_by_day
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
-from .._base import (
-    FULL_EMPLOYEE_FIELDS,
-    DaysSimpleReport,
-    DaysSimpleReportDayItem,
-    DaysSimpleReportItem,
-)
+from .._base import DaysSimpleReport, DaysSimpleReportDayItem, DaysSimpleReportItem
 from .common import ReportItem
 
 __all__ = ('generate_done_tasks_summary_report',)
@@ -51,10 +45,9 @@ async def generate_done_tasks_summary_report(
         session=session,
     )
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysSimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem(

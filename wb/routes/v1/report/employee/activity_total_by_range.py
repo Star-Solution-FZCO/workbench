@@ -6,12 +6,11 @@ from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import ActivitySummaryItem, calc_activity_summary
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
-from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_activity_total_by_range_report',)
 
@@ -78,10 +77,9 @@ async def generate_activity_total_by_range_report(
         activities[res.employee_id].append(res)
     results: list[SimpleReportItem] = []
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             SimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 item=_report_item_from_obj(
                     calc_activity_summary(activities[emp.id]),
                     vacations=len(

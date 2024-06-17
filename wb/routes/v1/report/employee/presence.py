@@ -6,14 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
 from shared_utils.dateutils import format_timedelta, sum_timedelta
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import get_employees_days_activity_status
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 from wb.services.tm import PresenceItem, calc_presence
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     DaysSimpleReport,
     DaysSimpleReportDayItem,
@@ -84,10 +82,9 @@ async def generate_presence_report(
     )
     results: list[DaysSimpleReportItem[ReportItem]] = []
     for emp, user_presence in zip(employees, presence):
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysSimpleReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysSimpleReportDayItem(
                         item=ReportItem.from_presence_item(

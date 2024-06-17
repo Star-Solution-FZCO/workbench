@@ -5,14 +5,12 @@ from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared_utils.dataclassutils import sum_dataclasses
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import ActivitySummaryItem, calc_activity_summary
 from wb.services.activity import get_employees_activities_by_day
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     DaysSimpleReport,
     DaysSimpleReportDayItem,
@@ -69,10 +67,9 @@ async def generate_activity_summary_report(
                 day: calc_activity_summary(acts)
                 for day, acts in activities[emp.id].items()
             }
-            emp_out_cls = get_employee_output_model_class(fields=FULL_EMPLOYEE_FIELDS)
             results.append(
                 DaysSimpleReportItem(
-                    employee=emp_out_cls.from_obj(emp),
+                    employee=emp,
                     days={
                         day: DaysSimpleReportDayItem(
                             item=_report_item_from_obj(summaries[day]),

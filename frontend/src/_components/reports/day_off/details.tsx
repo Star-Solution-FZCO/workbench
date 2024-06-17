@@ -23,6 +23,9 @@ const DayOffDetailsReportTable: FC<IDayOffDetailsReportProps> = ({ data }) => {
                     }}
                 >
                     <th>Person</th>
+                    <th>Email</th>
+                    <th>Cooperation type</th>
+                    <th>Organization</th>
                     <th colSpan={2}>Start</th>
                     <th colSpan={2}>End</th>
                     <th colSpan={2}>Days</th>
@@ -49,6 +52,23 @@ const DayOffDetailsReportTable: FC<IDayOffDetailsReportProps> = ({ data }) => {
                                               />
                                           </td>
                                       )}
+                                      <td rowSpan={record.items.length}>
+                                          <strong>
+                                              {record.employee.email}
+                                          </strong>
+                                      </td>
+                                      <td rowSpan={record.items.length}>
+                                          <strong>
+                                              {record.employee?.cooperation_type
+                                                  ?.label || "N/A"}
+                                          </strong>
+                                      </td>
+                                      <td rowSpan={record.items.length}>
+                                          <strong>
+                                              {record.employee?.organization
+                                                  ?.label || "N/A"}
+                                          </strong>
+                                      </td>
                                       <td colSpan={2}>
                                           <strong>{item.start}</strong>
                                       </td>

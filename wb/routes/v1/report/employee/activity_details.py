@@ -5,14 +5,12 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services.activity import get_employees_activities_by_day
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 from wb.utils.current_user import get_current_roles_employee_related
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     DaysListReport,
     DaysListReportDayItem,
@@ -75,10 +73,9 @@ async def generate_activity_details_report(
         employees, start, end, session=session
     )
     for emp in employees:
-        emp_out_cls = get_employee_output_model_class(emp, fields=FULL_EMPLOYEE_FIELDS)
         results.append(
             DaysListReportItem(
-                employee=emp_out_cls.from_obj(emp),
+                employee=emp,
                 days={
                     day: DaysListReportDayItem(
                         day_status=days_status[emp.id][day],

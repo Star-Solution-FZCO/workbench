@@ -6,11 +6,9 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services.employee import get_employees
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     ListDetailsReport,
     ListDetailsReportItem,
@@ -124,12 +122,9 @@ async def generate_day_off_details_report(  # pylint: disable=too-many-locals
     )
     items = []
     for emp_id, data in results.items():
-        emp_out_cls = get_employee_output_model_class(
-            employees[emp_id], fields=FULL_EMPLOYEE_FIELDS
-        )
         items.append(
             ListDetailsReportItem(
-                employee=emp_out_cls.from_obj(employees[emp_id]),
+                employee=employees[emp_id],
                 items=data,
             )
         )
@@ -161,12 +156,9 @@ async def generate_day_off_summary_report(  # pylint: disable=too-many-locals
         total_by_employee[emp_id] = total
     items = []
     for emp_id, _ in results.items():
-        emp_out_cls = get_employee_output_model_class(
-            employees[emp_id], fields=FULL_EMPLOYEE_FIELDS
-        )
         items.append(
             ListSummaryReportItem(
-                employee=emp_out_cls.from_obj(employees[emp_id]),
+                employee=employees[emp_id],
                 total=ReportSummaryItem(
                     vacation=total_by_employee[emp_id].get(m.DayType.VACATION, 0),
                     sick_day=total_by_employee[emp_id].get(m.DayType.SICK_DAY, 0),
