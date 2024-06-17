@@ -40,35 +40,46 @@ const DayOffDetailsReportTable: FC<IDayOffDetailsReportProps> = ({ data }) => {
                             ? record.items.map((item, index) => (
                                   <tr key={nanoid()}>
                                       {index === 0 && (
-                                          <td
-                                              rowSpan={record.items.length}
-                                              style={{
-                                                  verticalAlign: "top",
-                                                  width: "250px",
-                                              }}
-                                          >
-                                              <Employee
-                                                  employee={record.employee}
-                                              />
-                                          </td>
+                                          <>
+                                              <td
+                                                  rowSpan={record.items.length}
+                                                  valign="top"
+                                                  width="250px"
+                                              >
+                                                  <Employee
+                                                      employee={record.employee}
+                                                  />
+                                              </td>
+                                              <td
+                                                  rowSpan={record.items.length}
+                                                  valign="top"
+                                              >
+                                                  <strong>
+                                                      {record.employee.email}
+                                                  </strong>
+                                              </td>
+                                              <td
+                                                  rowSpan={record.items.length}
+                                                  valign="top"
+                                              >
+                                                  <strong>
+                                                      {record.employee
+                                                          ?.cooperation_type
+                                                          ?.label || "N/A"}
+                                                  </strong>
+                                              </td>
+                                              <td
+                                                  rowSpan={record.items.length}
+                                                  valign="top"
+                                              >
+                                                  <strong>
+                                                      {record.employee
+                                                          ?.organization
+                                                          ?.label || "N/A"}
+                                                  </strong>
+                                              </td>
+                                          </>
                                       )}
-                                      <td rowSpan={record.items.length}>
-                                          <strong>
-                                              {record.employee.email}
-                                          </strong>
-                                      </td>
-                                      <td rowSpan={record.items.length}>
-                                          <strong>
-                                              {record.employee?.cooperation_type
-                                                  ?.label || "N/A"}
-                                          </strong>
-                                      </td>
-                                      <td rowSpan={record.items.length}>
-                                          <strong>
-                                              {record.employee?.organization
-                                                  ?.label || "N/A"}
-                                          </strong>
-                                      </td>
                                       <td colSpan={2}>
                                           <strong>{item.start}</strong>
                                       </td>
