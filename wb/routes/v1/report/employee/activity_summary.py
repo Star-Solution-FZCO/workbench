@@ -5,14 +5,12 @@ from pydantic import Field, create_model
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from shared_utils.dataclassutils import sum_dataclasses
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import ActivitySummaryItem, calc_activity_summary
 from wb.services.activity import get_employees_activities_by_day
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     DaysSimpleReport,
     DaysSimpleReportDayItem,

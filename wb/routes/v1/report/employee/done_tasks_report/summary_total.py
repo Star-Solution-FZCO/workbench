@@ -4,12 +4,11 @@ from typing import Any
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services.done_tasks import get_done_task_summary
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 
-from .._base import FULL_EMPLOYEE_FIELDS, SimpleReport, SimpleReportItem
+from .._base import SimpleReport, SimpleReportItem
 from .common import ReportItem
 
 __all__ = ('generate_done_tasks_summary_total_report',)

@@ -6,11 +6,9 @@ from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services.employee import get_employees
 
 from ._base import (
-    FULL_EMPLOYEE_FIELDS,
     BaseReportItem,
     ListDetailsReport,
     ListDetailsReportItem,

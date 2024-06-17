@@ -6,13 +6,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 import wb.models as m
 from shared_utils.dateutils import format_timedelta, sum_timedelta
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import get_employees_days_activity_status
 from wb.services.employee import get_employees
 from wb.services.schedule import get_employees_days_status
 from wb.services.tm import calc_presence
 
-from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_presence_summary_report',)
 

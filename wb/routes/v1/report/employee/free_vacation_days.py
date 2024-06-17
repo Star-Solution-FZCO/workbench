@@ -3,11 +3,10 @@ from typing import Any
 from pydantic import Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from wb.schemas.employee import get_employee_output_model_class
 from wb.services import calc_employee_vacation_days
 from wb.services.employee import get_employees
 
-from ._base import FULL_EMPLOYEE_FIELDS, BaseReportItem, SimpleReport, SimpleReportItem
+from ._base import BaseReportItem, SimpleReport, SimpleReportItem
 
 __all__ = ('generate_free_days_report',)
 
