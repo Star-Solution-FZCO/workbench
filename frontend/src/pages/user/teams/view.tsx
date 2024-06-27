@@ -7,6 +7,7 @@ import { Navigate, useNavigate, useParams } from "react-router-dom";
 import TeamDescription from "./components/description";
 import TeamHistory from "./components/history";
 import TeamInfo from "./components/info";
+import { TeamStructure } from "./components/structure";
 
 type ViewTeamPropsT = {
     id: number;
@@ -48,6 +49,7 @@ export const ViewTeam: React.FC<ViewTeamPropsT> = ({ id }) => {
                         <Tab label="Info" value="info" />
                         <Tab label="History" value="history" />
                         <Tab label="Calendar" value="calendar" />
+                        <Tab label="Structure" value="structure" />
                     </TabList>
                 </Box>
 
@@ -61,6 +63,10 @@ export const ViewTeam: React.FC<ViewTeamPropsT> = ({ id }) => {
 
                 <TabPanel value="calendar" sx={{ p: 1 }}>
                     <TeamCalendar id={id} />
+                </TabPanel>
+
+                <TabPanel value="structure" sx={{ p: 1, height: "100%" }}>
+                    <TeamStructure id={id} />
                 </TabPanel>
             </TabContext>
         </Box>

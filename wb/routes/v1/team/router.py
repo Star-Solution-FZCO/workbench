@@ -19,6 +19,8 @@ import wb.models as m
 from wb.acl import list_employee_readable_fields
 from wb.db import get_db_session
 from wb.routes.v1.counteragent.schemas import CounterAgentOut
+from wb.routes.v1.employee.schemas import EmployeeHierarchyOut
+from wb.routes.v1.employee.utils import build_hierarchy
 from wb.schemas import (
     BaseListOutput,
     BaseModelIdOutput,
@@ -358,6 +360,27 @@ async def get_team_members(
         )
         items.append(emp_out)
     return make_list_output(count=count, limit=count, offset=0, items=items)
+
+
+@router.get('/{team_id}/hierarchy')
+async def get_employee_hierarchy_by_team(
+    team_id: int,
+    session: AsyncSession = Depends(get_db_session),
+) -> BasePayloadOutput[EmployeeHierarchyOut]:
+    team: m.Team | None = await session.scalar(
+        sa.select(m.Team).where(m.Team.id == team_id)
+    )
+    if not team:
+        raise HTTPException(404, detail='Not Found')
+    query = (
+        sa.select(m.Employee)
+        .filter(m.Employee.active.is_(True), m.Employee.team_id == team_id)
+        .options(selectinload(m.Employee.managers))
+        .order_by(m.Employee.english_name)
+    )
+    results = await session.scalars(query)
+    hierarchy = build_hierarchy(results.all())
+    return make_success_output(EmployeeHierarchyOut.from_obj(hierarchy))
 
 
 @router.get('/{team_id}/counteragents')

@@ -360,6 +360,14 @@ export const employeesApi = createApi({
             }),
             providesTags: ["Teams"],
         }),
+        getEmployeeHierarchyByTeam: build.query<EmployeeHierarchyT, number>({
+            query: (id) => ({
+                url: `${apiVersion}/team/${id}/hierarchy`,
+                transformResponse: (result: ApiResponse<EmployeeHierarchyT>) =>
+                    result.payload,
+            }),
+            providesTags: ["Team"],
+        }),
         // counteragents
         listCounteragentSelect: build.query<EmployeeSelectOptionT[], string>({
             query: (search) => ({
