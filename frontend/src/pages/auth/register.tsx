@@ -15,7 +15,7 @@ import { authActions } from "_redux";
 import { AUTH_MODE, passwordValidationRules } from "config";
 import React, { useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import { theme } from "theme";
 import { genRules, toastError } from "utils";
@@ -32,9 +32,10 @@ export const RegisterPage: React.FC = () => {
     }
 
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const methods = useForm<RegisterPageFormT>({
         defaultValues: {
-            register_token: "",
+            register_token: searchParams.get("register_token") || "",
             password: "",
             password2: "",
         },
@@ -172,14 +173,14 @@ export const RegisterPage: React.FC = () => {
                                 </a>
                             </Typography>
                         </Box>
-                        <Typography variant={"body2"} sx={{ m: 1 }}>
-                            <ul>
+                        <ul>
+                            <Typography variant={"body2"} sx={{ m: 1 }}>
                                 Password requirements:
                                 {passwordValidationRules.map((rule) => (
                                     <li key={rule}>{rule}</li>
                                 ))}
-                            </ul>
-                        </Typography>
+                            </Typography>
+                        </ul>
                     </Box>
                 </Box>
             </Container>
