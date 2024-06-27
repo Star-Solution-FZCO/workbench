@@ -379,7 +379,12 @@ async def get_employee_hierarchy_by_team(
         .order_by(m.Employee.english_name)
     )
     results = await session.scalars(query)
-    hierarchy = build_hierarchy(results.all())
+    employees = results.all()
+    if not employees:
+        raise HTTPException(
+            status_code=404, detail='No active employees found in the team'
+        )
+    hierarchy = build_hierarchy(employees)
     return make_success_output(EmployeeHierarchyOut.from_obj(hierarchy))
 
 

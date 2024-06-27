@@ -84,15 +84,8 @@ def build_hierarchy(employees: list[m.Employee]) -> EmployeeHierarchy:
 
     for employee in employees:
         for manager in employee.managers:
-            manager_subordinates[manager.id].append(employee_dict[employee.id])
-
-    managers = {employee.id for employee in employees if not employee.managers}
-    managers_with_children = {
-        manager_id
-        for manager_id in manager_subordinates
-        if manager_subordinates[manager_id]
-    }
-    top_managers = managers & managers_with_children
+            if manager.id in employee_dict:
+                manager_subordinates[manager.id].append(employee_dict[employee.id])
 
     def build_tree(employee_id: int):
         node = employee_dict[employee_id]
@@ -103,16 +96,23 @@ def build_hierarchy(employees: list[m.Employee]) -> EmployeeHierarchy:
                     node['children'].append(child)
         return node
 
-    if len(top_managers) == 1:
-        top_manager = top_managers.pop()
-        hierarchy = build_tree(top_manager)
+    top_level_employees = [
+        employee.id
+        for employee in employees
+        if not employee.managers
+        or all(manager.id not in employee_dict for manager in employee.managers)
+    ]
+
+    if len(top_level_employees) == 1:
+        top_employee_id = top_level_employees[0]
+        hierarchy = build_tree(top_employee_id)
     else:
         hierarchy = {
             'name': 'root',
             'attributes': None,
             'children': [],
         }
-        for manager_id in top_managers:
-            hierarchy['children'].append(build_tree(manager_id))
+        for top_employee_id in top_level_employees:
+            hierarchy['children'].append(build_tree(top_employee_id))
 
     return hierarchy
