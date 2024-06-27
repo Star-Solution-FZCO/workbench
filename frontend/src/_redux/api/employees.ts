@@ -363,9 +363,9 @@ export const employeesApi = createApi({
         getEmployeeHierarchyByTeam: build.query<EmployeeHierarchyT, number>({
             query: (id) => ({
                 url: `${apiVersion}/team/${id}/hierarchy`,
-                transformResponse: (result: ApiResponse<EmployeeHierarchyT>) =>
-                    result.payload,
             }),
+            transformResponse: (result: ApiResponse<EmployeeHierarchyT>) =>
+                result.payload,
             providesTags: ["Team"],
         }),
         // counteragents
