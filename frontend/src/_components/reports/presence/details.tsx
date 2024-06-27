@@ -2,7 +2,7 @@ import { nanoid } from "@reduxjs/toolkit";
 import { Employee } from "_components/employee";
 import { useAppSelector } from "_redux";
 import { dayBackgroundStyleMap } from "config";
-import { format, isToday } from "date-fns";
+import { format, isToday, parse } from "date-fns";
 import { capitalize } from "lodash";
 import { FC, Fragment } from "react";
 import { PresenceDayT, PresenceDetailsT } from "types";
@@ -121,7 +121,10 @@ const PresenceDetails: FC<IPresenceDetailsProps> = ({
                         >
                             <td>
                                 <strong>
-                                    {format(new Date(day), "dd MMM yyyy (E)")}
+                                    {format(
+                                        parse(day, "yyyy-MM-dd", new Date()),
+                                        "dd MMM yyyy (E)",
+                                    )}
                                 </strong>
                             </td>
 
